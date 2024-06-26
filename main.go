@@ -1,9 +1,11 @@
 package main
 
+//Main file
+
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"github.com/prifre/pfsms/ariasms/"
+	"github.com/prifre/pfsms/ui"
 )
 
 func main() {
