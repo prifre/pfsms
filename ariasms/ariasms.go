@@ -1,4 +1,4 @@
-package main
+package ariasms
 
 // Special program to send a lots of sms using a mobile phone!
 // uses logfilename for logging
