@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fyne.io/fyne/v2"
@@ -6,7 +6,7 @@ import (
 )
 
 // Create will stitch together all ui components
-func pfCreate(app fyne.App, window fyne.Window) *container.AppTabs {
+func Create(app fyne.App, window fyne.Window) *container.AppTabs {
 	appSettings := &AppSettings{}
 	appSettings.Theme = checkTheme(app.Preferences().StringWithFallback("Theme", "Adaptive (requires restart)"), app)
 

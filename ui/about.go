@@ -1,10 +1,12 @@
-package main
+package ui
 
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 )
+
+const version = "v0.0.2"
 
 type about struct {
 }

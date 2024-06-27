@@ -1,4 +1,4 @@
-module pfsms
+module github.com/prifre/pfsms
 
 go 1.22.1
 
