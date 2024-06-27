@@ -4,6 +4,7 @@ go 1.22.1
 
 require (
 	fyne.io/fyne/v2 v2.4.5
+	github.com/mattn/go-sqlite3 v1.14.22
 	go.bug.st/serial v1.6.2
 )
 
