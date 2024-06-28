@@ -35,8 +35,8 @@ func (s *thetable) buildTable() *container.Scroll {
 		o.(*widget.Label).SetText(data[i.Row][i.Col])
 	})
 	s.tableShow = list
-	return container.NewScroll(container.NewVBox(
-		&widget.Card{Title: "Data Handling", Content: list},
+	return container.NewScroll(container.NewVBox(list,
+//		&widget.Card{Title: "Data Handling", Content: list},
 	))
 }
 func (s *thetable) tabItem() *container.TabItem {
