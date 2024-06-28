@@ -36,7 +36,7 @@ func (db *DBtype) Opendb() error {
 }
 func (db *DBtype) Setupdb() error {
 	var err error
-	db.Databasepath = "pfsms.db"
+	db.Databasepath = "C:\\dev\\go\\src\\pfsms\\db\\pfsms.db"
 	if _, err = os.Stat(db.Databasepath); err == nil {
 		err = db.Opendb()
 		if err != nil {
