@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/prifre/db"
+	"github.com/prifre/pfsms/db"
 )
 
 type AppTable struct {
@@ -27,10 +27,12 @@ func NewTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 }
 func (s *thetable) buildTable() *container.Scroll {
 //	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
-	var data = [][]string{}
-	d:=new(db.dbtype)
+	d:=new(db.DBtype)
 	d.Setupdb()
-	data=d.ShowCustomers(1,100)
+	data,err:=d.ShowCustomers(1,100)
+	if err!=nil {
+		fmt.Printf("ShowCustomer failed %s",err.Error())
+	}
 	list := widget.NewTable(
 	func() (int, int) {
 		return len(data), len(data[0])

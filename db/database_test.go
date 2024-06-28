@@ -6,20 +6,20 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
-	d:=new(dbtype)
+	d:=new(DBtype)
 	d.Setupdb()
 	d.Opendb()
 }
 
 func TestImportdata(t *testing.T) {
-	d:=new(dbtype)
+	d:=new(DBtype)
 	d.Setupdb()
 	d.ImportCustomers("KUNDER.txt")
 	d.AddMessage("testmeddelande","Detta är ett speciellt innehåll")
 }
 
 func TestShowCustomers(t *testing.T) {
-	d:=new(dbtype)
+	d:=new(DBtype)
 	d.Setupdb()
 	r,err:=d.ShowCustomers(10,30)
 	if err!=nil {

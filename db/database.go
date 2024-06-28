@@ -11,13 +11,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type dbtype struct {
+type DBtype struct {
 	conn         *sql.DB
 	statement    *sql.Stmt
 	reply        sql.Result
 	Databasepath string
 }
-func (db *dbtype) Opendb() error {
+func (db *DBtype) Opendb() error {
 	var err error
 	// var temp fyne.URI
 	if db.conn != nil {
@@ -34,7 +34,7 @@ func (db *dbtype) Opendb() error {
 	db.conn.SetConnMaxLifetime(time.Hour * 2)
 	return err
 }
-func (db *dbtype) Setupdb() error {
+func (db *DBtype) Setupdb() error {
 	var err error
 	db.Databasepath = "pfsms.db"
 	if _, err = os.Stat(db.Databasepath); err == nil {
@@ -67,13 +67,13 @@ func (db *dbtype) Setupdb() error {
 	}
 	return err
 }
-func (db *dbtype) Closedatabase() error {
+func (db *DBtype) Closedatabase() error {
 	var err error
 	db.conn.Close()
 	db.conn = nil
 	return err
 }
-func (db *dbtype) Createtables() error {
+func (db *DBtype) Createtables() error {
 	var err error
 	err = db.Opendb()
 	if err != nil {
@@ -113,7 +113,7 @@ func (db *dbtype) Createtables() error {
 	}
 	return err
 }
-func (db *dbtype) Getsql(sq string) ([]string, error) {
+func (db *DBtype) Getsql(sq string) ([]string, error) {
 // get one value from database quickly...
 var err error
 	var k []string
@@ -172,7 +172,7 @@ var err error
 	}
 	return k, err
 }
-func (db *dbtype) Deleteall(n string) error {
+func (db *DBtype) Deleteall(n string) error {
 	var err error
 	var sq []string
 	// remove from database
@@ -198,7 +198,7 @@ func (db *dbtype) Deleteall(n string) error {
 	}
 	return err
 }
-func (db *dbtype) ImportCustomers(frfile string) error {
+func (db *DBtype) ImportCustomers(frfile string) error {
 	var err error
 	var b0 []byte
     b0, err = os.ReadFile(frfile) // SQL to make tables!
@@ -225,7 +225,7 @@ func (db *dbtype) ImportCustomers(frfile string) error {
 	}
 	return err
 }
-func (db *dbtype) AddMessage(messagetitle string,message string) error {
+func (db *DBtype) AddMessage(messagetitle string,message string) error {
 	var err error
 	nanostamp := time.Now().UnixNano()
 	tstamp := time.Now().Format(time.RFC3339)
@@ -240,7 +240,7 @@ func (db *dbtype) AddMessage(messagetitle string,message string) error {
 	db.reply, err = db.statement.Exec() // Execute SQL Statements
 return err
 }
-func (db *dbtype) ShowCustomers(from int,to int) ([][]string,error) {
+func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 	var data [][]string
 	var err error
 	var id int
