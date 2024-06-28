@@ -77,8 +77,6 @@ func (db *dbtype) Closedatabase() error {
 }
 func (db *dbtype) Createtables() error {
 	var err error
-	var sq []string
-
 	err = db.Opendb()
 	if err != nil {
 		log.Println("#1 CreateTables failed opendb: ", err.Error())
@@ -97,18 +95,23 @@ func (db *dbtype) Createtables() error {
         fmt.Print(err)
     }
     s := string(b) // convert content to a 'string'	for _, s := range sq {
-	db.statement, err = db.conn.Prepare(s) // Prepare SQL Statement
-	if err != nil {
-		if err.Error() == "table tblMain already exists" {
-			err = nil
+	s=strings.Replace(s,"\r\n\r\n","¤",-1)
+	s=strings.Replace(s,"\r\n"," ",-1)
+	for i:=0;i<len(strings.Split(s,"¤"));i++ {
+		sq:=strings.Split(s,"¤")[i]
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			if err.Error() == "table tblMain already exists" {
+				err = nil
+				return err
+			}
+			log.Println("#1 CreateTables: ", err.Error())
+		}
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			log.Println("#2 CreateTables failed: ", sq, " ", err.Error(), db.reply)
 			return err
 		}
-		log.Println("#1 CreateTables: ", err.Error())
-	}
-	db.reply, err = db.statement.Exec() // Execute SQL Statements
-	if err != nil {
-		log.Println("#2 CreateTables failed: ", sq, " ", err.Error(), db.reply)
-		return err
 	}
 	return err
 }
@@ -200,8 +203,10 @@ func (db *dbtype) Deleteall(n string) error {
 	return err
 }
 
-func (db *dbtype) Importdata(frfile string) error {
-    b0, err := os.ReadFile(frfile) // SQL to make tables!
+func (db *dbtype) ImportCustomers(frfile string) error {
+	var err error
+	var b0 []byte
+    b0, err = os.ReadFile(frfile) // SQL to make tables!
     if err != nil {
         fmt.Print(err)
     }
@@ -224,4 +229,19 @@ func (db *dbtype) Importdata(frfile string) error {
 		// Nr	Exp.Nota	Mobilnr	Förnamn	Efternamn	In	Ut	Sign	Regdatum	Indatum	Utdatum	År	Pärm	Väntetid
 	}
 	return err
+}
+func (db *dbtype) AddMessage(messagetitle string,message string) error {
+	var err error
+	nanostamp := time.Now().UnixNano()
+	tstamp := time.Now().Format(time.RFC3339)
+	fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
+	sq:="INSERT INTO tblMessages (nanostamp,tstamp,messagetitle,message) "
+	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,messagetitle,message)
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 prepare failed: ", sq, " ", err.Error())
+		return err
+	}
+	db.reply, err = db.statement.Exec() // Execute SQL Statements
+return err
 }

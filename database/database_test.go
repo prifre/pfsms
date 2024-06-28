@@ -13,5 +13,6 @@ func TestDatabase(t *testing.T) {
 func TestImportdata(t *testing.T) {
 	d:=new(dbtype)
 	d.Setupdb()
-	d.Importdata("KUNDER.txt")
+	d.ImportCustomers("KUNDER.txt")
+	d.AddMessage("testmeddelande","Detta är ett speciellt innehåll")
 }

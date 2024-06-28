@@ -13,7 +13,7 @@ func Create(app fyne.App, window fyne.Window) *container.AppTabs {
 	return &container.AppTabs{Items: []*container.TabItem{
 		newSettings(app, window,  appSettings).tabItem(),
 		newAbout().tabItem(),
-		
+		newTable(app,window,appTable).tabItem(),
 	}}
 }
 
