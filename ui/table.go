@@ -28,7 +28,7 @@ func (s *thetable) buildTable() *container.Scroll {
 //	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
 	var data = [][]string{}
 	for i:=0;i<100;i++ {
-		data1:=[]string{fmt.Sprint(i),fmt.Sprintf("A%d",i)}
+		data1:=[]string{fmt.Sprint(i),fmt.Sprintf("A_%d",i)}
 		data=append(data,data1)
 	}
 	list := widget.NewTable(
