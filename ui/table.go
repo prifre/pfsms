@@ -23,7 +23,7 @@ func newTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 	return &thetable{app: a, window: w,  appTable: at}
 }
 func (s *thetable) buildTable() *container.Scroll {
-	var data = [][]string{{"top left", "top right"},{"bottom left", "bottom right"}}
+	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
 	list := widget.NewTable(
 	func() (int, int) {
 		return len(data), len(data[0])
