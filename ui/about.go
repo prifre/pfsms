@@ -11,7 +11,7 @@ const version = "v0.0.2"
 type about struct {
 }
 
-func newAbout() *about {
+func NewAbout() *about {
 	return &about{}
 }
 

@@ -32,7 +32,7 @@ type settings struct {
 	app         fyne.App
 }
 
-func newSettings(a fyne.App, w fyne.Window,  as *AppSettings) *settings {
+func NewSettings(a fyne.App, w fyne.Window,  as *AppSettings) *settings {
 	return &settings{app: a, window: w,  appSettings: as}
 }
 
