@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"database/sql"
@@ -17,7 +17,6 @@ type dbtype struct {
 	reply        sql.Result
 	Databasepath string
 }
-
 func (db *dbtype) Opendb() error {
 	var err error
 	// var temp fyne.URI
@@ -35,7 +34,6 @@ func (db *dbtype) Opendb() error {
 	db.conn.SetConnMaxLifetime(time.Hour * 2)
 	return err
 }
-
 func (db *dbtype) Setupdb() error {
 	var err error
 	db.Databasepath = "pfsms.db"
@@ -115,10 +113,9 @@ func (db *dbtype) Createtables() error {
 	}
 	return err
 }
-
-// get one value from database quickly...
 func (db *dbtype) Getsql(sq string) ([]string, error) {
-	var err error
+// get one value from database quickly...
+var err error
 	var k []string
 	var s sql.NullString
 	var s2 string
@@ -175,7 +172,6 @@ func (db *dbtype) Getsql(sq string) ([]string, error) {
 	}
 	return k, err
 }
-
 func (db *dbtype) Deleteall(n string) error {
 	var err error
 	var sq []string
@@ -202,7 +198,6 @@ func (db *dbtype) Deleteall(n string) error {
 	}
 	return err
 }
-
 func (db *dbtype) ImportCustomers(frfile string) error {
 	var err error
 	var b0 []byte
@@ -245,3 +240,26 @@ func (db *dbtype) AddMessage(messagetitle string,message string) error {
 	db.reply, err = db.statement.Exec() // Execute SQL Statements
 return err
 }
+func (db *dbtype) ShowCustomers(from int,to int) ([][]string,error) {
+	var data [][]string
+	var err error
+	var id int
+	var phone,firstname,lastname string
+	err = db.Opendb()
+	if err != nil {
+		log.Println("#1 ShowCustomers opendb error: ", err.Error())
+		return nil, err
+	}
+	sq:=fmt.Sprintf("SELECT id,phone,firstname,lastname from tblCustomers WHERE id>%d AND id<=%d",from,to)
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		fmt.Println("#2 ShoweCustomers Query error:", err.Error())
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(&id,&phone,&firstname,&lastname)
+		data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
+	}
+	return data, err
+}
+
