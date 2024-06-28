@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
@@ -23,7 +25,11 @@ func newTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 	return &thetable{app: a, window: w,  appTable: at}
 }
 func (s *thetable) buildTable() *container.Scroll {
-	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
+//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
+	var data = [][]string{{}}
+	for i:=0;i<100;i++ {
+		data=append(data,[]string{fmt.Sprintf("A%d",i),fmt.Sprintf("B%d",i)})
+	}
 	list := widget.NewTable(
 	func() (int, int) {
 		return len(data), len(data[0])
