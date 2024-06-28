@@ -35,9 +35,9 @@ func (s *thetable) buildTable() *container.Scroll {
 		o.(*widget.Label).SetText(data[i.Row][i.Col])
 	})
 	s.tableShow = list
-	return container.NewScroll(container.NewVBox(list,
+	return container.NewScroll(list,
 //		&widget.Card{Title: "Data Handling", Content: list},
-	))
+	)
 }
 func (s *thetable) tabItem() *container.TabItem {
 	return &container.TabItem{Text: "Table", Icon: theme.SettingsIcon(), Content: s.buildTable()}
