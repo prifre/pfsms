@@ -19,10 +19,10 @@ type AppSettings struct {
 }
 
 type settings struct {
-	themeSelect *widget.Select
+	themeSelect 		*widget.Select
 
-	overwriteFiles     *widget.RadioGroup
-	notificationRadio  *widget.RadioGroup
+	overwriteFiles     	*widget.RadioGroup
+	notificationRadio  	*widget.RadioGroup
 
 	componentSlider     *widget.Slider
 	componentLabel      *widget.Label

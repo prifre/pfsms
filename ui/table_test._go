@@ -1,5 +1,4 @@
 package ui
-
 import (
 	"testing"
 
@@ -16,4 +15,3 @@ func TestTable(t *testing.T) {
 		w.SetMaster()
 		w.ShowAndRun()
 	}
-

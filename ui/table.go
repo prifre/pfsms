@@ -1,10 +1,28 @@
 package ui
 
-type thetable struct {
-	themeSelect *widget.Table
+import (
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+)
+
+type AppTable struct {
+	// Theme holds the current theme
+	Theme string
 }
 
-func newTable(a fyne.App, w fyne.Window) *fyne.Container {
+type thetable struct {
+	tableShow 	*widget.Table
+	appTable  	*AppTable
+	window      fyne.Window
+	app         fyne.App
+}
+
+func newTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
+	return &thetable{app: a, window: w,  appTable: at}
+}
+func (s *thetable) buildTable() *container.Scroll {
 	var data = [][]string{{"top left", "top right"},{"bottom left", "bottom right"}}
 	list := widget.NewTable(
 	func() (int, int) {
@@ -16,5 +34,12 @@ func newTable(a fyne.App, w fyne.Window) *fyne.Container {
 	func(i widget.TableCellID, o fyne.CanvasObject) {
 		o.(*widget.Label).SetText(data[i.Row][i.Col])
 	})
-	return list
+	s.tableShow = list
+	return container.NewScroll(container.NewVBox(
+		&widget.Card{Title: "Data Handling", Content: list},
+	))
 }
+func (s *thetable) tabItem() *container.TabItem {
+	return &container.TabItem{Text: "Table", Icon: theme.SettingsIcon(), Content: s.buildTable()}
+}
+	
