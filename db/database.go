@@ -209,6 +209,9 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 	for i:=0;i<len(strings.Split(b,"\r\n"));i++ {
 		b1:=strings.Split(b,"\r\n")[i]
 		b2:=strings.Split(b1,"\t")
+		if i % 100==0 {
+			fmt.Println(i)
+		}
 	//	fmt.Printf("%s\t%s\t%s\r\n",b2[2],b2[3],b2[4]) // mobilnrm förnamn, efternamn
 		sq:="INSERT INTO tblCustomers (expnote,phone,firstname,lastname,indate, outdate)"
 		sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")",sq,b2[1],b2[2],b2[3],b2[4],b2[9],b2[10])
