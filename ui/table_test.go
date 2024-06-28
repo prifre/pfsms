@@ -2,6 +2,10 @@ package ui
 
 import (
 	"testing"
+
+	"fyne.io/fyne"
+	"fyne.io/fyne/app"
+	"github.com/prifre/pfsms/ui"
 )
 
 func TestTable(t *testing.T) {
@@ -12,5 +16,4 @@ func TestTable(t *testing.T) {
 		w.SetMaster()
 		w.ShowAndRun()
 	}
-}
 

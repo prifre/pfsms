@@ -4,7 +4,7 @@ type thetable struct {
 	themeSelect *widget.Table
 }
 
-func newTable() *thetable{
+func newTable(a fyne.App, w fyne.Window) *thetable{
 	var data = [][]string{{"top left", "top right"},{"bottom left", "bottom right"}}
 	list := widget.NewTable(
 	func() (int, int) {
