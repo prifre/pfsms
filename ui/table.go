@@ -4,7 +4,7 @@ type thetable struct {
 	themeSelect *widget.Table
 }
 
-func newTable(a fyne.App, w fyne.Window) *thetable{
+func newTable(a fyne.App, w fyne.Window) *fyne.Container {
 	var data = [][]string{{"top left", "top right"},{"bottom left", "bottom right"}}
 	list := widget.NewTable(
 	func() (int, int) {
@@ -16,4 +16,5 @@ func newTable(a fyne.App, w fyne.Window) *thetable{
 	func(i widget.TableCellID, o fyne.CanvasObject) {
 		o.(*widget.Label).SetText(data[i.Row][i.Col])
 	})
-return 
+	return list
+}
