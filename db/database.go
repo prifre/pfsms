@@ -27,6 +27,10 @@ func (db *DBtype) Opendb() error {
 	if err != nil {
 		log.Fatal("setupdatabase storage.Child error", err.Error())
 		db.Setupdb()
+		db.conn, err = sql.Open("sqlite3", db.Databasepath) // Open the created SQLite File
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 	db.conn.SetMaxOpenConns(1)
 	db.conn.SetMaxIdleConns(0)
@@ -36,14 +40,33 @@ func (db *DBtype) Opendb() error {
 }
 func (db *DBtype) Setupdb() error {
 	var err error
-	db.Databasepath = "C:\\dev\\go\\src\\pfsms\\db\\pfsms.db"
-	if _, err = os.Stat(db.Databasepath); err == nil {
-		err = db.Opendb()
-		if err != nil {
-			log.Println("#1 setupdb Failed to open db '"+db.Databasepath+"'", db.conn)
-			return err
+	var path string
+	path, err = os.Getwd()
+	if err!=nil {
+		panic("path")
+	}
+	db.Databasepath = path
+	if db.Databasepath[len(db.Databasepath)-2:len(db.Databasepath)]=="db" {
+		db.Databasepath = db.Databasepath[:len(db.Databasepath)-3]
+	}
+	if db.Databasepath[len(db.Databasepath)-4:len(db.Databasepath)]!="data" {
+		db.Databasepath = db.Databasepath + string(os.PathSeparator) + "data"
+	}
+	if _, err = os.Stat(db.Databasepath); err != nil {
+		log.Println("#1 Adding folder data: " + db.Databasepath)
+		if os.IsNotExist(err) {
+			err = os.Mkdir(db.Databasepath, 0755)
+			if err!=nil {
+				panic(err.Error())
+			}
+			// file does not exist
+		} else {
+			panic(err.Error())
+			// other error
 		}
-	} else {
+	}	
+	db.Databasepath = db.Databasepath + string(os.PathSeparator) + "pfsms.db"
+	if _, err = os.Stat(db.Databasepath); err != nil {
 		log.Println("#2 database not found, creating new db: " + db.Databasepath)
 		var file *os.File
 		file, err = os.Create(db.Databasepath) // Create SQLite file
@@ -58,11 +81,6 @@ func (db *DBtype) Setupdb() error {
 			return err
 		} else {
 			log.Println("Database tables created")
-		}
-		err = db.Opendb()
-		if err != nil {
-			log.Println("#5 setupdb Failed to open db", db.conn)
-			return err
 		}
 	}
 	return err

@@ -7,8 +7,8 @@ import (
 
 func TestDatabase(t *testing.T) {
 	d:=new(DBtype)
-	d.Setupdb()
 	d.Opendb()
+	d.Setupdb()
 }
 
 func TestImportdata(t *testing.T) {
