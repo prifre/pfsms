@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 )
 
 const version = "v0.0.2"
@@ -60,5 +61,5 @@ func (a *about) buildUI() *fyne.Container {
 	)
 }
 func (a *about) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "About", Content: a.buildUI()}
+	return &container.TabItem{Text: "About",  Icon: theme.HelpIcon(),Content: a.buildUI()}
 }

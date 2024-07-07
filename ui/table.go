@@ -52,5 +52,5 @@ func (s *thetable) buildTable() *container.Scroll {
 	)
 }
 func (s *thetable) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Table", Icon: theme.SettingsIcon(), Content: s.buildTable()}
+	return &container.TabItem{Text: "Table", Icon: theme.GridIcon(), Content: s.buildTable()}
 }
