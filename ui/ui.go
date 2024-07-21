@@ -13,8 +13,8 @@ func Create(app fyne.App, window fyne.Window) *container.AppTabs {
 	appSettings.Theme = checkTheme(app.Preferences().StringWithFallback("Theme", "Adaptive (requires restart)"), app)
 
 	return &container.AppTabs{Items: []*container.TabItem{
-		NewTable(app,window,appTable).tabItem(),
 		NewMessages(app,window,appMessages).tabItem(),
+		NewTable(app,window,appTable).tabItem(),
 		NewSettings(app, window,  appSettings).tabItem(),
 		NewAbout().tabItem(),
 	}}

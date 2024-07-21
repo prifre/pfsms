@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,11 +18,14 @@ type DBtype struct {
 	reply        sql.Result
 	Databasepath string
 }
-func (db *DBtype) Opendb() error {
+func (db *DBtype) Opendb() {
 	var err error
 	// var temp fyne.URI
 	if db.conn != nil {
-		return nil // allready opened!
+		return // allready opened!
+	}
+	if _, err := os.Stat(db.Databasepath); errors.Is(err, os.ErrNotExist) {
+		db.Setupdb()
 	}
 	db.conn, err = sql.Open("sqlite3", db.Databasepath) // Open the created SQLite File
 	if err != nil {
@@ -36,7 +40,6 @@ func (db *DBtype) Opendb() error {
 	db.conn.SetMaxIdleConns(0)
 	db.conn.SetConnMaxIdleTime(time.Hour * 2)
 	db.conn.SetConnMaxLifetime(time.Hour * 2)
-	return err
 }
 func (db *DBtype) Setupdb() error {
 	var err error
@@ -45,17 +48,16 @@ func (db *DBtype) Setupdb() error {
 	if err!=nil {
 		panic("path")
 	}
-	db.Databasepath = path
-	if db.Databasepath[len(db.Databasepath)-2:len(db.Databasepath)]=="db" {
-		db.Databasepath = db.Databasepath[:len(db.Databasepath)-3]
+	if path[len(path)-2:]=="db" {
+		path = path[:len(path)-3]
 	}
-	if db.Databasepath[len(db.Databasepath)-4:len(db.Databasepath)]!="data" {
-		db.Databasepath = db.Databasepath + string(os.PathSeparator) + "data"
+	if path[len(path)-4:]!="data" {
+		path = path + string(os.PathSeparator) + "data"
 	}
-	if _, err = os.Stat(db.Databasepath); err != nil {
-		log.Println("#1 Adding folder data: " + db.Databasepath)
+	if _, err = os.Stat(path); err != nil {
+		log.Println("#1 Adding folder data: " + path)
 		if os.IsNotExist(err) {
-			err = os.Mkdir(db.Databasepath, 0755)
+			err = os.Mkdir(path, 0755)
 			if err!=nil {
 				panic(err.Error())
 			}
@@ -64,8 +66,8 @@ func (db *DBtype) Setupdb() error {
 			panic(err.Error())
 			// other error
 		}
-	}	
-	db.Databasepath = db.Databasepath + string(os.PathSeparator) + "pfsms.db"
+	}
+	db.Databasepath = path + string(os.PathSeparator) + "pfsms.db"
 	if _, err = os.Stat(db.Databasepath); err != nil {
 		log.Println("#2 database not found, creating new db: " + db.Databasepath)
 		var file *os.File
@@ -93,13 +95,9 @@ func (db *DBtype) Closedatabase() error {
 }
 func (db *DBtype) Createtables() error {
 	var err error
-	err = db.Opendb()
-	if err != nil {
-		log.Println("#1 CreateTables failed opendb: ", err.Error())
-		return err
-	}
 	// check if table exists
-	_, table_check := db.conn.Query("select * from tblMain;")
+	db.Opendb()
+	_, table_check := db.conn.Query("SELECT * FROM tblCustomers;")
 
 	if table_check == nil {
 		return nil
@@ -111,13 +109,17 @@ func (db *DBtype) Createtables() error {
         fmt.Print(err)
     }
     s := string(b) // convert content to a 'string'	for _, s := range sq {
-	s=strings.Replace(s,"\r\n\r\n","¤",-1)
-	s=strings.Replace(s,"\r\n"," ",-1)
-	for i:=0;i<len(strings.Split(s,"¤"));i++ {
-		sq:=strings.Split(s,"¤")[i]
+	s=strings.Replace(s,"\r"," ",-1)
+	s=strings.Replace(s,"\n"," ",-1)
+	s=strings.TrimSpace(s)
+	for i:=0;i<len(strings.Split(s,";"));i++ {
+		sq:=strings.Split(s,";")[i]
+		if len(sq)<10 {
+			continue
+		}
 		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 		if err != nil {
-			if err.Error() == "table tblMain already exists" {
+			if err.Error() == "table tblCustomers already exists" {
 				err = nil
 				return err
 			}
@@ -137,11 +139,7 @@ var err error
 	var k []string
 	var s sql.NullString
 	var s2 string
-	err = db.Opendb()
-	if err != nil {
-		log.Println("#1 Getsql opendb error: ", err.Error())
-		return nil, err
-	}
+	db.Opendb()
 	rows, err := db.conn.Query(sq)
 	if err != nil {
 		fmt.Println("#2 Getsql Query error:", err.Error())
@@ -191,13 +189,12 @@ var err error
 	return k, err
 }
 func (db *DBtype) Deleteall(n string) error {
+// delete the database file?
+
 	var err error
 	var sq []string
 	// remove from database
-	err = db.Opendb()
-	if err != nil {
-		log.Println("#1 deleteall open Failed", err.Error())
-	}
+	db.Opendb()
 	sq = append(sq, "DELETE FROM tblDustTrak WHERE nanostamp="+n)
 	sq = append(sq, "DELETE FROM tblPTrak WHERE nanostamp="+n)
 	sq = append(sq, "DELETE FROM tblAeroTrak WHERE nanostamp="+n)
@@ -219,19 +216,23 @@ func (db *DBtype) Deleteall(n string) error {
 func (db *DBtype) ImportCustomers(frfile string) error {
 	var err error
 	var b0 []byte
+	var sq string
     b0, err = os.ReadFile(frfile) // SQL to make tables!
     if err != nil {
         fmt.Print(err)
     }
 	b:=string(b0)
+	db.Opendb()
 	for i:=0;i<len(strings.Split(b,"\r\n"));i++ {
 		b1:=strings.Split(b,"\r\n")[i]
 		b2:=strings.Split(b1,"\t")
-		if i % 100==0 {
-			fmt.Println(i)
+		if len(b2)<9 || b2[1]=="Exp.Nota" {
+			continue
 		}
-	//	fmt.Printf("%s\t%s\t%s\r\n",b2[2],b2[3],b2[4]) // mobilnrm förnamn, efternamn
-		sq:="INSERT INTO tblCustomers (expnote,phone,firstname,lastname,indate, outdate)"
+		if i % 100==0 {
+			fmt.Println(i,b2)
+		}
+		sq ="INSERT INTO tblCustomers (expnote,phone,firstname,lastname,indate,outdate)"
 		sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")",sq,b2[1],b2[2],b2[3],b2[4],b2[9],b2[10])
 		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 		if err != nil {
@@ -246,13 +247,14 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 	}
 	return err
 }
-func (db *DBtype) AddMessage(messagetitle string,message string) error {
+func (db *DBtype) AddMessage(reference string, message string) error {
 	var err error
+	db.Opendb()
 	nanostamp := time.Now().UnixNano()
 	tstamp := time.Now().Format(time.RFC3339)
 	fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
-	sq:="INSERT INTO tblMessages (nanostamp,tstamp,messagetitle,message) "
-	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,messagetitle,message)
+	sq:="INSERT INTO tblMessages (nanostamp,tstamp,reference,message) "
+	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,reference,message)
 	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 	if err != nil {
 		log.Println("#1 prepare failed: ", sq, " ", err.Error())
@@ -266,21 +268,58 @@ func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 	var err error
 	var id int
 	var phone,firstname,lastname string
-	err = db.Opendb()
-	if err != nil {
-		log.Println("#1 ShowCustomers opendb error: ", err.Error())
-		return nil, err
-	}
+	db.Opendb()
 	sq:=fmt.Sprintf("SELECT id,phone,firstname,lastname from tblCustomers WHERE id>%d AND id<=%d",from,to)
 	rows, err := db.conn.Query(sq)
 	if err != nil {
-		fmt.Println("#2 ShoweCustomers Query error:", err.Error())
+		fmt.Println("#2 ShowCustomers Query error:", err.Error())
 		return nil, err
 	}
 	for rows.Next() {
 		err = rows.Scan(&id,&phone,&firstname,&lastname)
 		data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
 	}
+	return data, err
+}
+func (db *DBtype) ShowGroupnames() ([][]string,error) {
+	// should show all available groupnames
+	var data [][]string
+	var err error
+	var id int
+	var phone,firstname,lastname string
+	db.Opendb()
+	sq:="SELECT * FROM tblGroupnames ORDER BY groupname ASC"
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		fmt.Println("#2 ShowGropupnames Query error:", err.Error())
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(&id,&phone,&firstname,&lastname)
+		data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
+	}
+	return data, err
+}
+
+func (db *DBtype) ShowGroups(from int,to int) ([][]string,error) {
+	// the ShowGroups should show groups based on CustomerID selected []id
+	var data [][]string
+	var err error
+	data=append(data,[]string{"test","test2","test3"})
+	
+	// var id int
+	// var phone,firstname,lastname string
+	// db.Opendb()
+	// sq:=fmt.Sprintf("SELECT id FROM tblGroups WHERE id>%d AND id<=%d",from,to)
+	// rows, err := db.conn.Query(sq)
+	// if err != nil {
+	// 	fmt.Println("#2 ShowGroups Query error:", err.Error())
+	// 	return nil, err
+	// }
+	// for rows.Next() {
+	// 	err = rows.Scan(&id,&phone,&firstname,&lastname)
+	// 	data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
+	// }
 	return data, err
 }
 

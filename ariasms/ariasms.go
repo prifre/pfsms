@@ -20,43 +20,42 @@ import (
 	"go.bug.st/serial"
 )
 
-const logfilename = "ariasms.log"
-const phonenumbersfilename = "ariasms.tel"
-const messagefilename = "ariasms.txt"
-const timeout = time.Millisecond * 700
-const comport = "COM2"
+type SMStype struct {
+	logfilename string
+	wrt 		io.Writer
+	mydebug 	bool
+	comport 	string 
+	timeout 	time.Duration
+	starttime 	time.Time
+	port serial.Port
+}
 
-var wrt io.Writer
-var mydebug bool = true
-
-func main() {
+func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 	// Replace with the correct serial port of the modem
-	var message, sendtext, phoneNumber, Fname, Lname string
+	var sendtext, phoneNumber, Fname, Lname string
 	var failures, success int
-	var phonenumbers []string
 	var err error
-	var port serial.Port
-	Setuplog()
-	starttime := time.Now()
-	hname, _ := os.Hostname()
-	log.Println("Starting " + hname)
+	s.Setuplog()
+	s.starttime = time.Now()
+	s.timeout = time.Millisecond * 700
+	s.comport = "COM2"
 	mode := &serial.Mode{
 		BaudRate: 115200,
 		Parity:   serial.NoParity,
 		DataBits: 8,
 		StopBits: serial.OneStopBit,
 	}
-	port, err = serial.Open(comport, mode)
+	s.port, err = serial.Open(s.comport, mode)
 	if err != nil {
 		log.Fatal("#1 serial.Open(comport)", err)
 	}
-	port.SetReadTimeout(timeout)
-	var m []byte
-	m, err = os.ReadFile(messagefilename)
-	if err != nil {
-		log.Fatal("#2 ariasms.txt error", err)
-	}
-	message = string(m)
+	s.port.SetReadTimeout(s.timeout)
+	// var m []byte
+	// m, err = os.ReadFile(messagefilename)
+	// if err != nil {
+	// 	log.Fatal("#2 ariasms.txt error", err)
+	// }
+	message = strings.TrimSpace(message)
 	// message += "Hej <<Fname>>,\r\n"
 	// message += "Den 14/3, 14-18 kommer Per Ståbi att hålla en kalligrafikurs på Sollentuna Ram.\r\n"
 	// message += "De som inte betalat kursen ännu kan gärna Swisha 1700:- till 0736290839.\r\n"
@@ -64,8 +63,8 @@ func main() {
 	// message += "Med glada hälsningar\r\n"
 	// message += "Peter & Per"
 	// message = "test"
-	phonenumbers = getphonenumbers(phonenumbersfilename)
-	log.Printf("Read %d from %s ok.\r\n", len(phonenumbers), phonenumbersfilename)
+	// phonenumbers = getphonenumbers(phonenumbersfilename)
+	log.Printf("Got %d phonenumbers to send ok.\r\n", len(phonenumbers))
 	for i, record := range phonenumbers {
 		if !strings.Contains(record, "\t") {
 			phoneNumber = record
@@ -88,10 +87,10 @@ func main() {
 		}
 		sentok := false
 		for !sentok {
-			sentok = sendSMS(port, phoneNumber, sendtext)
+			sentok = s.SendSMS(phoneNumber, sendtext)
 			if !sentok {
 				log.Println("--------------------SENDSMS FAILED")
-				for !modemreset(port) {
+				for !s.Modemreset() {
 					log.Println("--------------------MODEMRESET FAILED")
 				}
 				log.Println("--------------------MODEMRESET OK")
@@ -100,36 +99,36 @@ func main() {
 		}
 		success++
 		log.Printf("Message %d/%d to phone %s sent! (failures: %d)\r\n", i+1, len(phonenumbers), phoneNumber, failures)
-		documentsms(time.Now(), phoneNumber, showdebugmsg(sendtext))
-		if !mydebug {
+		s.Documentsms(time.Now(), phoneNumber, showdebugmsg(sendtext))
+		if !s.mydebug {
 			fmt.Printf("%s %s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02"), time.Now().Format("15:04"), i+1, len(phonenumbers), phoneNumber, failures)
 		}
 	}
 	log.Printf("\r\nRESULT OF SMS SENDING\r\nFailures: %d\r\nSuccess: %d\r\n", failures, success)
-	log.Printf("Started: %s\r\nFinished: %s\r\nDuration: %s\r\n", starttime, time.Now(), time.Since(starttime))
-	fmt.Printf("Speed: %ds/sms", int(time.Since(starttime).Seconds())/len(phonenumbers))
-	port.Close()
+	log.Printf("Started: %s\r\nFinished: %s\r\nDuration: %s\r\n", s.starttime, time.Now(), time.Since(s.starttime))
+	fmt.Printf("Speed: %ds/sms", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
+	s.port.Close()
 }
-func sendSMS(port serial.Port, phoneNumber string, message string) bool {
+func (s SMStype) SendSMS(phoneNumber string, message string) bool {
 	var pduarray []string
 	var cmd1 []string
 	var cmd2 []string
 	var r string
-	pduarray = createLongPDU(phoneNumber, message)
+	pduarray = CreateLongPDU(phoneNumber, message)
 	for i := 0; i < len(pduarray); i++ {
 		cmd1 = append(cmd1, "AT+CMGS="+fmt.Sprintf("%d", (len(pduarray[i])-2)/2)+"\r\n")
 		cmd2 = append(cmd2, pduarray[i]+string(rune(26)))
 	}
 	for i := 0; i < len(cmd1); i++ {
-		port.Write([]byte(cmd1[i]))
-		r = myread(port)
+		s.port.Write([]byte(cmd1[i]))
+		r = myread(s.port)
 		if !strings.Contains(r, ">") {
 			fmt.Printf("ERROR #1: no '>' in part %d: %s", i, r)
 			return false
 		}
-		port.Write([]byte(cmd2[i]))
-		r = myread(port)
-		r += myread(port)
+		s.port.Write([]byte(cmd2[i]))
+		r = myread(s.port)
+		r += myread(s.port)
 		if !strings.Contains(r, "OK") {
 			fmt.Printf("ERROR #2: no 'OK' in part %d: %s", i, r)
 			return false
@@ -153,7 +152,7 @@ func myread(port serial.Port) string {
 	}
 	return r
 }
-func createLongPDU(phoneNumber string, message string) []string {
+func CreateLongPDU(phoneNumber string, message string) []string {
 	const maxCharsPerSegment = 67 // Maximum characters per segment
 	var segments []string
 	var pdus []string
@@ -173,12 +172,12 @@ func createLongPDU(phoneNumber string, message string) []string {
 		// UDH Length (1 byte) | Information Element Identifier (1 byte) | Information Element Data Length (1 byte) |
 		// 0x00 (1 byte) | Message Reference (1 byte) | Total Parts (1 byte) | Sequence Number (1 byte)
 		udh := fmt.Sprintf("05000300%02X%02X", len(segments), i+1) // Construct UDH for segmented message with total length
-		pdu = createPDU(phoneNumber, segments[i], udh)             // Construct PDU for the segment with UDH
+		pdu = CreatePDU(phoneNumber, segments[i], udh)             // Construct PDU for the segment with UDH
 		pdus = append(pdus, pdu)
 	}
 	return pdus
 }
-func createPDU(number string, message string, udh string) string {
+func CreatePDU(number string, message string, udh string) string {
 	// Ensure the phone number is in the correct format (e.g., with TOA)
 	var pdu, pduHeader, pduMessage, pduMessageLen string
 	phoneNumber := strings.TrimPrefix(number, "+")
@@ -236,61 +235,86 @@ func showdebugmsg(s string) string {
 	r2 = strings.Replace(r2, string(rune(26)), "\\z", -1)
 	return r2
 }
-func Setuplog() {
-	f, err := os.OpenFile(logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+func (s SMStype) Setuplog() {
+	f, err := os.OpenFile(s.logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
 	//	defer f.Close()
-	if mydebug { // write to both screen and file!!!
-		wrt = io.MultiWriter(os.Stdout, f)
+	if s.mydebug { // write to both screen and file!!!
+		s.wrt = io.MultiWriter(os.Stdout, f)
 	} else {
-		wrt = f
+		s.wrt = f
 	}
-	log.SetOutput(wrt)
+	log.SetOutput(s.wrt)
 }
-func getphonenumbers(fn string) []string {
-	// Read the text file
-	data, err := os.ReadFile(fn)
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return nil
-	}
+// func getphonenumbers(fn string) []string {
+// 	// Read the text file
+// 	data, err := os.ReadFile(fn)
+// 	if err != nil {
+// 		fmt.Println("Error reading file:", err)
+// 		return nil
+// 	}
 
-	// Convert the data to a string
-	text := string(data)
-	text = strings.TrimSpace(text)
-	text = strings.Replace(text, "\n", "\r", -1)
-	text = strings.Replace(text, "\r\r", "\r", -1)
-	text = strings.Replace(text, "\r0", "\r+46", -1)
-	if text[:1] == "0" {
-		text = "+46" + text[1:]
-	}
+// 	// Convert the data to a string
+// 	text := string(data)
+// 	text = strings.TrimSpace(text)
+// 	text = strings.Replace(text, "\n", "\r", -1)
+// 	text = strings.Replace(text, "\r\r", "\r", -1)
+// 	text = strings.Replace(text, "\r0", "\r+46", -1)
+// 	if text[:1] == "0" {
+// 		text = "+46" + text[1:]
+// 	}
 
-	// Split the text into an array of phone numbers
-	if !strings.Contains(text, "\t") && strings.Contains(text, " ") {
-		text = strings.Replace(text, " ", "\t", -1)
-		for strings.Contains(text, "\t\t") {
-			text = strings.Replace(text, "\t\t", "\t", -1)
+// 	// Split the text into an array of phone numbers
+// 	if !strings.Contains(text, "\t") && strings.Contains(text, " ") {
+// 		text = strings.Replace(text, " ", "\t", -1)
+// 		for strings.Contains(text, "\t\t") {
+// 			text = strings.Replace(text, "\t\t", "\t", -1)
+// 		}
+// 	}
+// 	phoneNumbers := strings.Split(text, "\r")
+// 	return phoneNumbers
+// }
+func (s SMStype) Documentsms(t time.Time, p string, msg string) {
+	var path string
+	var err error
+	path, err = os.Getwd()
+	if err!=nil {
+		panic("path")
+	}
+	if path[len(path)-2:]=="db" {
+		path = path[:len(path)-3]
+	}
+	if path[len(path)-4:]!="data" {
+		path = path + string(os.PathSeparator) + "data"
+	}
+	if _, err = os.Stat(path); err != nil {
+		log.Println("#1 Adding folder data: " + path)
+		if os.IsNotExist(err) {
+			err = os.Mkdir(path, 0755)
+			if err!=nil {
+				panic(err.Error())
+			}
+			// file does not exist
+		} else {
+			panic(err.Error())
+			// other error
 		}
 	}
-	phoneNumbers := strings.Split(text, "\r")
-	return phoneNumbers
-}
-func documentsms(t time.Time, p string, msg string) {
-	fn := strings.Replace(phonenumbersfilename, ".txt", ".log", -1)
-	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	s.logfilename = path + string(os.PathSeparator) + "pfsms.log"
+	f, err := os.OpenFile(s.logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
 	p = strings.Replace(p, "+46", "0", -1)
-	s := fmt.Sprintf("%s\t%s\t%s\t%s\r\n", t.Format("2006-01-02"), t.Format("15:04"), p, msg)
-	f.WriteString(s)
+	txt := fmt.Sprintf("%s\t%s\t%s\t%s\r\n", t.Format("2006-01-02"), t.Format("15:04"), p, msg)
+	f.WriteString(txt)
 	f.Close()
 }
-func modemreset(port serial.Port) bool {
+func (s SMStype) Modemreset() bool {
 	var r string
-	port.Break(time.Second)
+	s.port.Break(time.Second)
 	// port.Write([]byte(string("AT+DEVCONINFO\r\n")))
 	// slowwrite(port, "AT+CGMM\r\n")
 	// model := myread(port)
@@ -298,23 +322,23 @@ func modemreset(port serial.Port) bool {
 	// model = strings.TrimSpace(model)
 	// fmt.Println("MODEL: ", model)
 	r = ""
-	port.Write([]byte("\032\r\n"))
-	r += myread(port)
-	port.Write([]byte("AT+CFUN=0\r\n"))
-	r += myread(port)
-	port.Write([]byte("ATZ\r\n")) // set echo on...
-	r += myread(port)
-	port.Write([]byte("ATE0\r\n")) // set echo on...
-	r += myread(port)
-	port.Write([]byte("AT+CFUN=1\r\n"))
-	r += myread(port)
-	port.Write([]byte("AT+CSCA=\"+46735480000\""))
-	r += myread(port)
-	slowwrite(port, "AT+CSCA?\r\n")
-	r += myread(port)
-	port.Write([]byte("AT+CMGF=0\r\n")) // Set PDU mode
-	r += myread(port)
-	if mydebug {
+	s.port.Write([]byte("\032\r\n"))
+	r += myread(s.port)
+	s.port.Write([]byte("AT+CFUN=0\r\n"))
+	r += myread(s.port)
+	s.port.Write([]byte("ATZ\r\n")) // set echo on...
+	r += myread(s.port)
+	s.port.Write([]byte("ATE0\r\n")) // set echo on...
+	r += myread(s.port)
+	s.port.Write([]byte("AT+CFUN=1\r\n"))
+	r += myread(s.port)
+	s.port.Write([]byte("AT+CSCA=\"+46735480000\""))
+	r += myread(s.port)
+	slowwrite(s.port, "AT+CSCA?\r\n")
+	r += myread(s.port)
+	s.port.Write([]byte("AT+CMGF=0\r\n")) // Set PDU mode
+	r += myread(s.port)
+	if s.mydebug {
 		fmt.Println("MODEMRESET: ", showdebugmsg(r))
 	}
 	if strings.Contains(strings.ToUpper(r), "ERROR") || !strings.Contains(r, "OK") || len(r) == 0 {
