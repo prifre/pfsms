@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -17,7 +18,9 @@ type DBtype struct {
 	statement    *sql.Stmt
 	reply        sql.Result
 	Databasepath string
+	hash		string
 }
+
 func (db *DBtype) Opendb() {
 	var err error
 	// var temp fyne.URI
@@ -35,6 +38,24 @@ func (db *DBtype) Opendb() {
 		if err != nil {
 			panic(err.Error())
 		}
+	}
+	var h string
+	db.hash,_=db.GetHash()
+	if db.hash=="" {
+		b := make([]rune, 32)
+		var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		for i := range b {
+			b[i] = letters[rand.Intn(len(letters))]
+		}
+		h=string(b)
+		err =db.SetHash(h)
+		if err!=nil {
+			log.Panic("COULD NOT MAKE HASH")
+		}
+	}
+	db.hash,err=db.GetHash()
+	if err!=nil {
+		log.Panic("COULD NOT MAKE HASH 2")
 	}
 	db.conn.SetMaxOpenConns(1)
 	db.conn.SetMaxIdleConns(0)
@@ -247,14 +268,83 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 	}
 	return err
 }
-func (db *DBtype) AddMessage(reference string, message string) error {
+func (db *DBtype) ShowMessages() ([][]string,error) {
+	var err error
+	var ids,reference,message string
+	var data [][]string
+	var rows *sql.Rows
+	db.Opendb()
+	rows, err = db.conn.Query("SELECT id,reference,message FROM tblMessages ORDER BY ID ASC")
+	if err != nil {
+		log.Println("#2 ShowCustomers Query error:", err.Error())
+		return nil,err
+	}
+	for rows.Next() {
+		err = rows.Scan(&ids,&reference,&message)
+		data=append(data,[]string{ids,reference,message})
+	}
+	return data,err
+}
+func (db *DBtype) AddMessage(reference string, message string) (int,error) {
+	var err error
+	var sq string
+	var r *sql.Rows
+	var reply int
+	db.Opendb()
+	nanostamp := time.Now().UnixNano()
+	tstamp := time.Now().Format(time.RFC3339)
+	// fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
+	sq=fmt.Sprintf("SELECT * FROM tblMessages WHERE reference='%s'",reference)
+	r, err = db.conn.Query(sq)
+	if r != nil && err==nil {
+		r.Next()
+		r.Scan(&reply)
+		log.Println("#1 cannot insert, reference exists")
+		return reply,errors.New("#1 cannot insert, reference exists")
+		//reference exists in db, so just Update
+	}
+	sq="INSERT INTO tblMessages (nanostamp,tstamp,reference,message) "
+	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,reference,message)
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#2 prepare failed: ", sq, " ", err.Error())
+		return -1,err
+	}
+	db.reply, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		log.Println("#3 Exec error failed: ", sq, " ", err.Error())
+		return -1,err
+	}
+	var r0 int64
+	r0,err =db.reply.LastInsertId()
+	reply=int(r0)
+return reply,err
+}
+func (db *DBtype) UpdateMessage(id int,reference string, message string) error {
 	var err error
 	db.Opendb()
 	nanostamp := time.Now().UnixNano()
 	tstamp := time.Now().Format(time.RFC3339)
 	fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
-	sq:="INSERT INTO tblMessages (nanostamp,tstamp,reference,message) "
+	sq:="UPDATE tblMessages (nanostamp,tstamp,reference,message) "
 	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,reference,message)
+	sq = fmt.Sprintf("%s WHERE id = %d",sq,id)
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 UpdateMessage prepare failed: ", sq, " ", err.Error())
+		return err
+	}
+	db.reply, err = db.statement.Exec() // Execute SQL Statements
+return err
+}
+func (db *DBtype) DeleteMessage(id int) error {
+	var err error
+	var sq string
+	db.Opendb()
+	nanostamp := time.Now().UnixNano()
+	tstamp := time.Now().Format(time.RFC3339)
+	fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
+	sq = fmt.Sprintf("DELETE FROM tblMessages WHERE id = %d",id)
 	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 	if err != nil {
 		log.Println("#1 prepare failed: ", sq, " ", err.Error())
@@ -300,8 +390,7 @@ func (db *DBtype) ShowGroupnames() ([][]string,error) {
 	}
 	return data, err
 }
-
-func (db *DBtype) ShowGroups(from int,to int) ([][]string,error) {
+func (db *DBtype) ShowGroups() ([][]string,error) {
 	// the ShowGroups should show groups based on CustomerID selected []id
 	var data [][]string
 	var err error

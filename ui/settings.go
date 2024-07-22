@@ -2,11 +2,13 @@ package ui
 
 import (
 	"fmt"
+	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/prifre/pfsms/db"
 )
 
 var (
@@ -64,6 +66,26 @@ func (s *settings) onUseEmailChanged(selected string) {
 	s.emailFrequency.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
 	s.emailFLabel.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
 }
+func (s *settings) getPassword() string {
+	prefPassword:= s.app.Preferences().StringWithFallback("ePassword","")
+	d:=new(db.DBtype)
+	d.Opendb()
+	realPassword,err:=d.DecryptPassword(prefPassword)
+	if err!=nil {
+		log.Println("getPassWord DecryptPassword error")
+	}
+	return realPassword
+}
+func (s *settings) setPassword(realPassword string) error {
+	d:=new(db.DBtype)
+	d.Opendb()
+	prefPassword,err:=d.EncryptPassword(realPassword)
+	if err!=nil {
+		log.Println("setPassWord EncryptPassword error")
+	}
+	s.app.Preferences().SetString("ePassword",prefPassword)
+	return err
+}
 func (s *settings) buildUI() *container.Scroll {
 	s.themeSelect = &widget.Select{Options: themes, OnChanged: s.onThemeChanged, Selected: s.appSettings.Theme}
 
@@ -93,8 +115,8 @@ func (s *settings) buildUI() *container.Scroll {
 		s.app.Preferences().SetString("eUser",s.emailUser.Text)
 	}}
 	s.emailPLabel = &widget.Label{Text: "Email Password", TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailPassword = &widget.Entry{Text:s.app.Preferences().StringWithFallback("ePassword",""),OnChanged: func(v string) {
-		s.app.Preferences().SetString("ePassword",s.emailPassword.Text)
+	s.emailPassword = &widget.Entry{Text:s.getPassword(),OnChanged: func(v string) {
+		s.setPassword(s.emailPassword.Text)
 	}}
 	s.emailFLabel = &widget.Label{Text:
 		fmt.Sprintf("Email frequency (%d min)",int(s.app.Preferences().FloatWithFallback("eFrequency",10))),

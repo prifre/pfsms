@@ -18,6 +18,7 @@ type AppEmail struct {
 
 type thelog struct {
 	btnStart	*widget.Button
+	btnCheck	*widget.Button
 	logtext				*widget.Label
 	appEmail 	*AppEmail
 	window      	fyne.Window
@@ -29,15 +30,31 @@ func NewEmaillog(a fyne.App, w fyne.Window,  el *AppEmail) *thelog {
 }
 func (s *thelog) buildLog() *container.Scroll {
 	var e pfemail.Etype
+	var err error
 	s.logtext = &widget.Label{}
-	s.btnStart = &widget.Button{Text:"Start Email",OnTapped: func() {
+	s.btnCheck = &widget.Button{Text:"Check Email",OnTapped: func() {
+		st :=new(settings)
 		e.SetupEmail(s.app.Preferences().StringWithFallback("eServer",""),
 		s.app.Preferences().StringWithFallback("eUser",""),
-		s.app.Preferences().StringWithFallback("ePassword",""),
+		st.getPassword(),
+		s.app.Preferences().StringWithFallback("ePort",""))
+		s.Addtolog(fmt.Sprintf("\r\n%s%s",time.Now(),"Checking email..."+s.app.Preferences().StringWithFallback("eUser","")))
+		err=e.Checkemaillogin()
+		if err!=nil {
+			s.Addtolog("\r\nResult of email login check: %s"+err.Error())
+		} else {
+			s.Addtolog(fmt.Sprintf("\r\n%s%s",time.Now(),"Email check ok."))
+		}
+	}}
+	s.btnStart = &widget.Button{Text:"Start Email",OnTapped: func() {
+		st :=new(settings)
+		e.SetupEmail(s.app.Preferences().StringWithFallback("eServer",""),
+		s.app.Preferences().StringWithFallback("eUser",""),
+		st.getPassword(),
 		s.app.Preferences().StringWithFallback("ePort",""))
 		fmt.Println("START CHECKING EMAIL!!")
-		s.Addtolog(fmt.Sprintf("\r\n%s%s",time.Now(),"Checking mail..."))
-		et:=e.Getonemail()
+		s.Addtolog(fmt.Sprintf("\r\n%s%s",time.Now(),"Handling mail..."))
+		et:=e.Getallmailmovetosmsfolder()
 		if et!=nil {
 			s.Addtolog(et.Text)
 		} else {
@@ -46,7 +63,7 @@ func (s *thelog) buildLog() *container.Scroll {
 	}}
 	return container.NewScroll(		
 		container.NewVBox(
-			s.btnStart,
+			container.NewHBox(s.btnCheck,s.btnStart),
 			s.logtext,
 	))
 }

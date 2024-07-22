@@ -12,7 +12,6 @@ import (
 	"github.com/prifre/pfsms/ui"
 )
 
-
 func main() {
 	a := app.NewWithID("pfsms")
 	w := a.NewWindow("pfsms-gui")

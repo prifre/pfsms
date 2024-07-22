@@ -31,7 +31,7 @@ func NewTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 func (s *thetable) buildTableCustomers() *container.Scroll {
 //	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
 	d:=new(db.DBtype)
-	d.Setupdb()
+	d.Opendb()
 	dataCustomers,err:=d.ShowCustomers(0,10000)
 	if err!=nil {
 		fmt.Printf("ShowCustomer failed %s",err.Error())
@@ -55,7 +55,7 @@ func (s *thetable) buildTableCustomers() *container.Scroll {
 func (s *thetable) buildTableGroups() *container.Scroll {
 	//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
 	d:=new(db.DBtype)
-	d.Setupdb()
+	d.Opendb()
 	dataGroups,err:=d.ShowGroupnames()
 	if err!=nil {
 		fmt.Printf("ShowGroups failed %s",err.Error())
