@@ -6,13 +6,12 @@ import (
 )
 
 func TestGetonemail(t *testing.T) {
-	var username, password, mailserver string
-	var mailserverport int
-	password = "1Fv2zjofj6Jb!"
-	username = "sms@sollentunaram.se"
-	mailserver = "mailcluster.loopia.se"
-	mailserverport = 993
-	e := Getonemail(username, password, mailserver, mailserverport)
+	var e0 Etype
+	e0.pword = ""
+	e0.uname = "sms@sollentunaram.se"
+	e0.mserver = "mailcluster.loopia.se"
+	e0.mport = 993
+	e := e0.Getonemail()
 	if e!=nil {
 		fmt.Println("UID:", e.UID)
 		fmt.Println("SUBJECT:", e.Subject)

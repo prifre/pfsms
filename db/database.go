@@ -277,7 +277,7 @@ func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 	}
 	for rows.Next() {
 		err = rows.Scan(&id,&phone,&firstname,&lastname)
-		data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
+		data=append(data,[]string{fmt.Sprintf("%d: %s   %s %s",id,phone,firstname,lastname)})
 	}
 	return data, err
 }
@@ -286,7 +286,7 @@ func (db *DBtype) ShowGroupnames() ([][]string,error) {
 	var data [][]string
 	var err error
 	var id int
-	var phone,firstname,lastname string
+	var groupname string
 	db.Opendb()
 	sq:="SELECT * FROM tblGroupnames ORDER BY groupname ASC"
 	rows, err := db.conn.Query(sq)
@@ -295,8 +295,8 @@ func (db *DBtype) ShowGroupnames() ([][]string,error) {
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(&id,&phone,&firstname,&lastname)
-		data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
+		err = rows.Scan(&id,&groupname)
+		data=append(data,[]string{groupname})
 	}
 	return data, err
 }

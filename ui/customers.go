@@ -1,5 +1,6 @@
 package ui
 
+// show database with Customers & Grops
 import (
 	"fmt"
 
@@ -18,6 +19,7 @@ type AppTable struct {
 type thetable struct {
 	tableShowCustomers 	*widget.Table
 	tableShowGroups 	*widget.Table
+	sep 		*widget.Label
 	appTable  	*AppTable
 	window      fyne.Window
 	app         fyne.App
@@ -54,7 +56,7 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 	//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
 	d:=new(db.DBtype)
 	d.Setupdb()
-		dataGroups,err:=d.ShowGroupnames()
+	dataGroups,err:=d.ShowGroupnames()
 	if err!=nil {
 		fmt.Printf("ShowGroups failed %s",err.Error())
 	}
@@ -69,15 +71,21 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 		o.(*widget.Label).SetText(dataGroups[i.Row][i.Col])
 	})
 	listGroups.OnSelected=func(i widget.TableCellID) {
-		fmt.Println(i)
+		fmt.Println(i,s.window.Canvas().Size().Width)
 	}
 	s.tableShowGroups = listGroups
 	return container.NewScroll(listGroups)
 }
 func (s *thetable) buildTable() *container.Scroll {
-	bigContainer:=container.NewScroll(container.NewVBox(s.buildTableCustomers(),s.buildTableGroups(),
+	s.buildTableCustomers().SetMinSize(fyne.NewSize(s.window.Canvas().Size().Width*9,800))
+	s.buildTableGroups().SetMinSize(fyne.NewSize(s.window.Canvas().Size().Width*2,100))
+	s.sep=widget.NewLabel(string(" "))
+	bigContainer:=container.NewScroll(container.NewGridWithColumns(3,
+	s.buildTableCustomers(),s.sep,
+	s.buildTableGroups(),
 	//		&widget.Card{Title: "Data Handling", Content: list},
-widget.NewLabel("asdf")))
+// ,widget.NewLabel(string(window.))
+))
 return bigContainer
 }
 

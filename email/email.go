@@ -2,6 +2,7 @@ package pfemail
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/BrianLeishman/go-imap"
 )
@@ -21,26 +22,39 @@ import (
 // 	fmt.Println("\r\nFlags:\r\n", e.Flags)
 // 	fmt.Println(e.Flags)
 // }
-func Getonemail(uname, pword, mserver string, mport int) *imap.Email {
+type Etype struct {
+	uname 		string
+	pword		string
+	mserver 	string
+	mport 		int
+	// mfrequency	int
+}
+func (e *Etype) SetupEmail(s1,s2,s3,s4 string) {
+	e.mserver=s1
+	e.uname=s2
+	e.pword=s3
+	s0,_:=strconv.Atoi(s4)
+	e.mport = int(s0)
+}
+func (e *Etype) Getonemail() *imap.Email {
 	// get emails in inbox
 	// Defaults to false. This package level option turns on or off debugging output, essentially.
 	// If verbose is set to true, then every command, and every response, is printed,
 	// along with other things like error messages (before the retry limit is reached)
-	imap.Verbose = false
+	imap.Verbose = true
 
 	// Defaults to 10. Certain functions retry; like the login function, and the new connection function.
 	// If a retried function fails, the connection will be closed, then the program sleeps for an increasing amount of time,
 	// creates a new connection instance internally, selects the same folder, and retries the failed command(s).
 	// You can check out github.com/StirlingMarketingGroup/go-retry for the retry implementation being used
-	imap.RetryCount = 3
 	// Create a new instance of the IMAP connection you want to use
-	im, err := imap.New(uname, pword, mserver, mport)
-	//	im, err := imap.New("prifre@prifre.com", "h2wG2jbdWBv!", "mailcluster.loopia.se", 993)
+	imap.RetryCount = 3
+	im, err := imap.New(e.uname, e.pword, e.mserver, e.mport)
 	if err != nil {
 		fmt.Println("#0 Instance of IMAP could not be created."+err.Error())
 		return nil
 	}		
-defer im.Close()
+	defer im.Close()
 
 	// Folders now contains a string slice of all the folder names on the connection
 	folders, err := im.GetFolders()
@@ -48,7 +62,7 @@ defer im.Close()
 		fmt.Println("#1 No email folders found."+err.Error())
 		return nil
 	}		
-smsfolderexists := false
+	smsfolderexists := false
 	for _, f := range folders {
 		if f == "INBOX.sms" {
 			smsfolderexists = true

@@ -4,13 +4,13 @@ go 1.22.1
 
 require (
 	fyne.io/fyne/v2 v2.4.5
+	github.com/BrianLeishman/go-imap v0.1.5
 	github.com/mattn/go-sqlite3 v1.14.22
 	go.bug.st/serial v1.6.2
 )
 
 require (
 	fyne.io/systray v1.10.1-0.20231115130155-104f5ef7839e // indirect
-	github.com/BrianLeishman/go-imap v0.1.5 // indirect
 	github.com/StirlingMarketingGroup/go-retry v0.0.0-20190512160921-94a8eb23e893 // indirect
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/creack/goselect v0.1.2 // indirect
