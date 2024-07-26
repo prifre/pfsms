@@ -51,9 +51,9 @@ func (s *theform) buildForm() *container.Scroll {
 		},
 		OnSubmit: func() { // optional, handle form submission
 			s.HandleSubmit( s.phone.Text, s.reference.Text, s.message.Text)
-		},
-		// ariasms.SendMessage([]string{s.phone.Text},s.message.Text)
-		}
+		},}
+		// sms:=new(ariasms.SMStype)
+		// sms.SendMessage([]string{s.phone.Text},s.message.Text)		
 	return container.NewScroll(		
 		container.NewVBox(
 			widget.NewLabel("To use multiple mobile numbers, separate them with commas or Enter."),
@@ -78,10 +78,9 @@ func (s *theform) HandleSubmit(p,t,m string) {
 	ph = strings.Replace(ph,",,",",",-1)
 	ph = strings.Replace(ph,",,",",",-1)
 	p1:=strings.Split(ph,",")
-	sms :=new(SMStype)
+	var sms ariasms.SMStype =*new(ariasms.SMStype)
 	sms.SendMessage(p1,m)
 	for i:=0;i<len(p1);i++ {
 		Appendtotextfile("smshistory.txt","Sending "+s.message.Text+" to "+p1[i])
-		
 	}
 }
