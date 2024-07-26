@@ -72,7 +72,7 @@ func (s *settings) getPassword() string {
 	d.Opendb()
 	realPassword,err:=d.DecryptPassword(prefPassword)
 	if err!=nil {
-		log.Println("getPassWord DecryptPassword error")
+		log.Println("getPassword DecryptPassword error")
 	}
 	return realPassword
 }

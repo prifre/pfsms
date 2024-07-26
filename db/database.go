@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -39,28 +38,11 @@ func (db *DBtype) Opendb() {
 			panic(err.Error())
 		}
 	}
-	var h string
-	db.hash,_=db.GetHash()
-	if db.hash=="" {
-		b := make([]rune, 32)
-		var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-		for i := range b {
-			b[i] = letters[rand.Intn(len(letters))]
-		}
-		h=string(b)
-		err =db.SetHash(h)
-		if err!=nil {
-			log.Panic("COULD NOT MAKE HASH")
-		}
-	}
-	db.hash,err=db.GetHash()
-	if err!=nil {
-		log.Panic("COULD NOT MAKE HASH 2")
-	}
-	db.conn.SetMaxOpenConns(1)
-	db.conn.SetMaxIdleConns(0)
-	db.conn.SetConnMaxIdleTime(time.Hour * 2)
-	db.conn.SetConnMaxLifetime(time.Hour * 2)
+	db.MakeHash()
+	// db.conn.SetMaxOpenConns(1)
+	// db.conn.SetMaxIdleConns(0)
+	// db.conn.SetConnMaxIdleTime(time.Second * 5)
+	// db.conn.SetConnMaxLifetime(time.Second * 5)
 }
 func (db *DBtype) Setupdb() error {
 	var err error
@@ -359,11 +341,16 @@ func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 	var id int
 	var phone,firstname,lastname string
 	db.Opendb()
-	sq:=fmt.Sprintf("SELECT id,phone,firstname,lastname from tblCustomers WHERE id>%d AND id<=%d",from,to)
+	// r,_:=db.conn.Exec("SELECT COUNT(*) FROM tblCustomers")
+	// fmt.Println(r)
+	sq:=fmt.Sprintf("SELECT id,phone,firstname,lastname FROM tblCustomers WHERE id>%d AND id<=%d",from,to)
 	rows, err := db.conn.Query(sq)
 	if err != nil {
 		fmt.Println("#2 ShowCustomers Query error:", err.Error())
 		return nil, err
+	}
+	if !rows.Next() {
+		return nil,err
 	}
 	for rows.Next() {
 		err = rows.Scan(&id,&phone,&firstname,&lastname)

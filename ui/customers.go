@@ -19,7 +19,6 @@ type AppTable struct {
 type thetable struct {
 	tableShowCustomers 	*widget.Table
 	tableShowGroups 	*widget.Table
-	sep 		*widget.Label
 	appTable  	*AppTable
 	window      fyne.Window
 	app         fyne.App
@@ -28,13 +27,15 @@ type thetable struct {
 func NewTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 	return &thetable{app: a, window: w,  appTable: at}
 }
-func (s *thetable) buildTableCustomers() *container.Scroll {
-//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
+func (s *thetable) listCustomers() *widget.Table {
 	d:=new(db.DBtype)
 	d.Opendb()
 	dataCustomers,err:=d.ShowCustomers(0,10000)
 	if err!=nil {
 		fmt.Printf("ShowCustomer failed %s",err.Error())
+	}
+	if len(dataCustomers)<=0 {
+		dataCustomers=[][]string{{"No customers"}}
 	}
 	listCustomers := widget.NewTable(
 	func() (int, int) {
@@ -49,8 +50,15 @@ func (s *thetable) buildTableCustomers() *container.Scroll {
 	listCustomers.OnSelected=func(i widget.TableCellID) {
 		fmt.Println(i)
 	}
-	s.tableShowCustomers = listCustomers
-	return container.NewScroll(listCustomers)
+	listCustomers.SetColumnWidth(0,20)
+	listCustomers.SetRowHeight(0,20)
+	listCustomers.BaseWidget.Resize(fyne.NewSize(1000,1000))
+	return listCustomers
+}
+func (s *thetable) buildTableCustomers() *container.Scroll {
+//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
+	s.tableShowCustomers = s.listCustomers()
+	return container.NewScroll(s.tableShowCustomers)
 }
 func (s *thetable) buildTableGroups() *container.Scroll {
 	//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
@@ -59,6 +67,9 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 	dataGroups,err:=d.ShowGroupnames()
 	if err!=nil {
 		fmt.Printf("ShowGroups failed %s",err.Error())
+	}
+	if len(dataGroups)<=0 {
+		dataGroups=[][]string{{"No groups"}}
 	}
 	listGroups := widget.NewTable(
 	func() (int, int) {
@@ -77,15 +88,14 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 	return container.NewScroll(listGroups)
 }
 func (s *thetable) buildTable() *container.Scroll {
-	s.buildTableCustomers().SetMinSize(fyne.NewSize(s.window.Canvas().Size().Width*9,800))
-	s.buildTableGroups().SetMinSize(fyne.NewSize(s.window.Canvas().Size().Width*2,100))
-	s.sep=widget.NewLabel(string(" "))
-	bigContainer:=container.NewScroll(container.NewGridWithColumns(3,
-	s.buildTableCustomers(),s.sep,
-	s.buildTableGroups(),
-	//		&widget.Card{Title: "Data Handling", Content: list},
-// ,widget.NewLabel(string(window.))
-))
+	gr:=container.NewGridWithColumns(2,
+			s.buildTableCustomers().Content,
+			s.buildTableGroups())
+	var windowSize= fyne.NewSize(700,600)
+	s.buildTableCustomers().SetMinSize(fyne.NewSize(windowSize.Width*.9,windowSize.Height*.9))
+	s.buildTableGroups().SetMinSize(fyne.NewSize(windowSize.Width*.2,windowSize.Height*.9))
+	s.window.Resize(windowSize)
+	bigContainer:=container.NewScroll(gr)
 return bigContainer
 }
 
