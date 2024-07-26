@@ -32,10 +32,13 @@ func Appendtotextfile(fn string, m string) error {
 		}
 	}
 	fn = path + string(os.PathSeparator) + fn
-	d1 := []byte(m)
-	err = os.WriteFile(fn, d1, 0644)
+	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err.Error())
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(m); err != nil {
+		log.Println(err)
 	}
 	return err
 }

@@ -33,7 +33,7 @@ func (s *thehistory) buildHistory() *container.Scroll {
 }
 
 func (s *thehistory) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Mail Log", Icon: theme.DocumentIcon(), Content: s.buildHistory()}
+	return &container.TabItem{Text: "History", Icon: theme.DocumentIcon(), Content: s.buildHistory()}
 }
 func (s *thehistory) Addhistory (m string) {
 	s.history.SetText(fmt.Sprintf("%s%s",s.history.Text ,m ))
