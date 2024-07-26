@@ -78,7 +78,7 @@ func (s *theform) HandleSubmit(p,t,m string) {
 	ph = strings.Replace(ph,",,",",",-1)
 	ph = strings.Replace(ph,",,",",",-1)
 	p1:=strings.Split(ph,",")
-	sms :=new(ariasms)
+	sms :=new(SMStype)
 	sms.SendMessage(p1,m)
 	for i:=0;i<len(p1);i++ {
 		Appendtotextfile("smshistory.txt","Sending "+s.message.Text+" to "+p1[i])
