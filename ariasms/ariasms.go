@@ -21,13 +21,14 @@ import (
 )
 
 type SMStype struct {
-	logfilename string
+	Logfilename string 
 	wrt 		io.Writer
 	mydebug 	bool
-	comport 	string 
+	Comport 	string 
 	timeout 	time.Duration
 	starttime 	time.Time
-	port serial.Port
+	port		serial.Port
+	Addhash		bool
 }
 
 func (s *SMStype) SendMessage(phonenumbers []string, message string) {
@@ -35,17 +36,17 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 	var sendtext, phoneNumber, Fname, Lname string
 	var failures, success int
 	var err error
+	s.mydebug= true
 	s.Setuplog()
 	s.starttime = time.Now()
 	s.timeout = time.Millisecond * 700
-	s.comport = "COM2"
 	mode := &serial.Mode{
 		BaudRate: 115200,
 		Parity:   serial.NoParity,
 		DataBits: 8,
 		StopBits: serial.OneStopBit,
 	}
-	s.port, err = serial.Open(s.comport, mode)
+	s.port, err = serial.Open(s.Comport, mode)
 	if err != nil {
 		log.Fatal("#1 serial.Open(comport)", err)
 	}
@@ -78,7 +79,11 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 				Lname = rec[2]
 			}
 		}
-		sendtext = fmt.Sprintf(message+"\r\n#=%d", i+1)
+		if s.Addhash {
+			sendtext = fmt.Sprintf(message+"\r\n#=%d", i+1)
+		} else {
+			sendtext=message
+		}
 		if Lname > "" {
 			sendtext = strings.Replace(sendtext, "<<Fname>>", Fname, -1)
 		}
@@ -99,7 +104,6 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 		}
 		success++
 		log.Printf("Message %d/%d to phone %s sent! (failures: %d)\r\n", i+1, len(phonenumbers), phoneNumber, failures)
-		s.Documentsms(time.Now(), phoneNumber, showdebugmsg(sendtext))
 		if !s.mydebug {
 			fmt.Printf("%s %s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02"), time.Now().Format("15:04"), i+1, len(phonenumbers), phoneNumber, failures)
 		}
@@ -236,7 +240,33 @@ func showdebugmsg(s string) string {
 	return r2
 }
 func (s SMStype) Setuplog() {
-	f, err := os.OpenFile(s.logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	var path string
+	var err error
+	path, err = os.Getwd()
+	if err!=nil {
+		panic("path")
+	}
+	if path[len(path)-2:]=="db" {
+		path = path[:len(path)-3]
+	}
+	if path[len(path)-4:]!="data" {
+		path = path + string(os.PathSeparator) + "data"
+	}
+	if _, err = os.Stat(path); err != nil {
+		log.Println("#1 Adding folder data: " + path)
+		if os.IsNotExist(err) {
+			err = os.Mkdir(path, 0755)
+			if err!=nil {
+				panic(err.Error())
+			}
+			// file does not exist
+		} else {
+			panic(err.Error())
+			// other error
+		}
+	}
+	s.Logfilename = path + string(os.PathSeparator) + "smslog.txt"
+	f, err := os.OpenFile(s.Logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
@@ -276,42 +306,6 @@ func (s SMStype) Setuplog() {
 // 	phoneNumbers := strings.Split(text, "\r")
 // 	return phoneNumbers
 // }
-func (s SMStype) Documentsms(t time.Time, p string, msg string) {
-	var path string
-	var err error
-	path, err = os.Getwd()
-	if err!=nil {
-		panic("path")
-	}
-	if path[len(path)-2:]=="db" {
-		path = path[:len(path)-3]
-	}
-	if path[len(path)-4:]!="data" {
-		path = path + string(os.PathSeparator) + "data"
-	}
-	if _, err = os.Stat(path); err != nil {
-		log.Println("#1 Adding folder data: " + path)
-		if os.IsNotExist(err) {
-			err = os.Mkdir(path, 0755)
-			if err!=nil {
-				panic(err.Error())
-			}
-			// file does not exist
-		} else {
-			panic(err.Error())
-			// other error
-		}
-	}
-	s.logfilename = path + string(os.PathSeparator) + "pfsms.log"
-	f, err := os.OpenFile(s.logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	p = strings.Replace(p, "+46", "0", -1)
-	txt := fmt.Sprintf("%s\t%s\t%s\t%s\r\n", t.Format("2006-01-02"), t.Format("15:04"), p, msg)
-	f.WriteString(txt)
-	f.Close()
-}
 func (s SMStype) Modemreset() bool {
 	var r string
 	s.port.Break(time.Second)
@@ -354,4 +348,7 @@ func slowwrite(port serial.Port, s string) {
 		port.Write([]byte(string(s[i]))) // sms central...
 	}
 	port.Drain()
+}
+func (s SMStype) GetPortsList() ([]string, error) {
+		return serial.GetPortsList()
 }

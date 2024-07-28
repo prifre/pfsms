@@ -3,29 +3,26 @@ package ui
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/prifre/pfsms/ariasms"
 	"github.com/prifre/pfsms/db"
 )
-
 var (
-	themes       = []string{"Adaptive (requires restart)", "Light", "Dark"}
-	onOffOptions = []string{"On", "Off"}
+	onOffOptions 	= []string{"On", "Off"}
+	mobilemodels    = []string{"Samsung S24","Samsung S9"}
 )
-
-// AppSettings contains settings specific to the application
-type AppSettings struct {
-	// Theme holds the current theme
-	Theme string
-}
-
 type settings struct {
-	themeSelect 		*widget.Select
 	mobileNumber  		*widget.Entry
-	mobileLabel      	*widget.Label
+	mobileCountry		*widget.Select
+	mobileModel  		*widget.Select
+	mobilePort  		*widget.Select
+	mobileAddhash		*widget.Check
+	btnTest				*widget.Button
 
 	useEmail	     	*widget.RadioGroup
 	emailServer  		*widget.Entry
@@ -39,19 +36,12 @@ type settings struct {
 	emailFLabel      	*widget.Label
 	emailFrequency      *widget.Slider
 
-	appSettings *AppSettings
-	window      fyne.Window
-	app         fyne.App
+	window  		    fyne.Window
+	app        			fyne.App
 }
-
-func NewSettings(a fyne.App, w fyne.Window,  as *AppSettings) *settings {
-	return &settings{app: a, window: w,  appSettings: as}
+func NewSettings(a fyne.App, w fyne.Window) *settings {
+	return &settings{app: a, window: w}
 }
-
-func (s *settings) onThemeChanged(selected string) {
-	s.app.Preferences().SetString("Theme", checkTheme(selected, s.app))
-}
-
 func (s *settings) onUseEmailChanged(selected string) {
 //	s.client.OverwriteExisting = selected == "On"
 	s.app.Preferences().SetString("UseEmail",selected)
@@ -87,11 +77,42 @@ func (s *settings) setPassword(realPassword string) error {
 	return err
 }
 func (s *settings) buildUI() *container.Scroll {
-	s.themeSelect = &widget.Select{Options: themes, OnChanged: s.onThemeChanged, Selected: s.appSettings.Theme}
+	// s.themeSelect = &widget.Select{Options: themes, OnChanged: func(tc string) {
+	// 	s.app.Preferences().SetString("Theme", checkTheme(tc, s.app))
+	// }, Selected: s.appSettings.Theme}
 
-	s.mobileLabel = &widget.Label{Text: "Your Mobile#", TextStyle: fyne.TextStyle{Bold: true}}
 	s.mobileNumber = &widget.Entry{Text:s.app.Preferences().StringWithFallback("mobilenumber",""),OnChanged: func(v string) {
 		s.app.Preferences().SetString("mobilenumber",s.mobileNumber.Text)
+	}}
+	var sms ariasms.SMStype =*new(ariasms.SMStype)
+	p,err:=sms.GetPortsList()
+	if err!=nil {
+		log.Print("settings.buildUI #1 GetPortsList Error")
+	}
+	s.mobilePort =&widget.Select{Options: p, OnChanged: func(sel string) {
+		s.app.Preferences().SetString("mobilePort", sel)
+		}, Selected: s.app.Preferences().StringWithFallback("mobilePort", ""),
+	}
+	s.mobileModel =&widget.Select{Options: mobilemodels, OnChanged: func(sel string) {
+		s.app.Preferences().SetString("mobileModel", sel)
+		}, Selected: s.app.Preferences().StringWithFallback("mobileModel", ""),
+	}
+	allcountries := GetAllCountries()
+	s.mobileCountry =&widget.Select{Options: allcountries, OnChanged: func(sel string) {
+		s.app.Preferences().SetString("moileCountry", sel)
+		}, Selected: s.app.Preferences().StringWithFallback("mobileCountry", "Sweden (+46)"),
+	}
+	s.mobileAddhash = &widget.Check{Text:"Add '#=' and messagenumber to end of sent messages",
+			OnChanged: func(sel bool) {	s.app.Preferences().SetBool("addHash",sel) },
+			Checked:s.app.Preferences().Bool("addHash")}
+	s.btnTest = & widget.Button{Text:"Click to send a test sms message to yourself.",OnTapped: func ()  {
+		t:=time.Now().Format("2006-01-02 15:04:05")
+		testmessage:=fmt.Sprintf("This is a short testmessage, sent %s", t)
+		pn:= s.app.Preferences().StringWithFallback("mobilenumber","")
+		var sms ariasms.SMStype =*new(ariasms.SMStype)
+		sms.Addhash=s.app.Preferences().Bool("addHash")
+		sms.Comport = s.app.Preferences().StringWithFallback("mobilePort", "COM2")
+		sms.SendMessage([]string{pn},testmessage)
 	}}
 
 	s.emailSLabel = &widget.Label{Text: "Email Server", TextStyle: fyne.TextStyle{Bold: true}}
@@ -134,15 +155,17 @@ func (s *settings) buildUI() *container.Scroll {
 	s.useEmail.SetSelected(s.app.Preferences().StringWithFallback("UseEmail", "Off"))
 	s.onUseEmailChanged(s.app.Preferences().StringWithFallback("UseEmail", "Off"))
 
-	interfaceContainer := container.NewGridWithColumns(2,
-		newBoldLabel("Application Theme"), s.themeSelect,
-	)
 	mobileContainer := container.NewGridWithColumns(2,
-	 s.mobileLabel,s.mobileNumber,
+		NewBoldLabel("Your Phone Number"),s.mobileNumber,
+		NewBoldLabel("Your Country"),s.mobileCountry,
+		NewBoldLabel("Your Phone Model"),s.mobileModel,
+		NewBoldLabel("Your Computer Port"),s.mobilePort,
+		NewBoldLabel("Add some numbering into messages"),s.mobileAddhash,
+		NewBoldLabel("Test mobile settings"),s.btnTest,
 	)
 
 	dataContainer := container.NewGridWithColumns(2,
-		newBoldLabel("Use Email"), s.useEmail,
+		NewBoldLabel("Use Email"), s.useEmail,
 		s.emailSLabel, s.emailServer,
 		s.emailPortLabel, s.emailPort,
 		s.emailULabel, s.emailUser,
@@ -150,28 +173,10 @@ func (s *settings) buildUI() *container.Scroll {
 		s.emailFLabel,s.emailFrequency,
 	)
 	return container.NewScroll(container.NewVBox(
-		&widget.Card{Title: "User Interface", Content: interfaceContainer},
 		&widget.Card{Title: "Mobile Settings", Content: mobileContainer},
 		&widget.Card{Title: "Email Settings", Content: dataContainer},
 	))
 }
-
 func (s *settings) tabItem() *container.TabItem {
 	return &container.TabItem{Text: "Settings", Icon: theme.SettingsIcon(), Content: s.buildUI()}
-}
-
-func checkTheme(themec string, a fyne.App) string {
-	switch themec {
-	case "Light":
-		//lint:ignore SA1019 Not quite ready for removal on Linux.
-		a.Settings().SetTheme(theme.LightTheme())
-	case "Dark":
-		//lint:ignore SA1019 Not quite ready for removal on Linux.
-		a.Settings().SetTheme(theme.DarkTheme())
-	}
-	return themec
-}
-
-func newBoldLabel(text string) *widget.Label {
-	return &widget.Label{Text: text, TextStyle: fyne.TextStyle{Bold: true}}
 }

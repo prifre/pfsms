@@ -2,21 +2,25 @@ package ui
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	"fyne.io/fyne/v2"
+	appearance "fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+
+	"fyne.io/fyne/v2/layout"
 )
 
-const version = "v0.0.2"
-
-type about struct {
+type theabout struct {
+	window  		    fyne.Window
+	app        			fyne.App
 }
 
-func NewAbout() *about {
-	return &about{}
+func NewAbout(a fyne.App, w fyne.Window) *theabout {
+	return &theabout{app: a, window: w}
 }
 func Getmemoryinfo() string {
 // Alloc uint64
@@ -42,24 +46,33 @@ func Getmemoryinfo() string {
         // r += fmt.Sprintf("\r\nNumGC = %v\n", m.NumGC)
 		return r
 }
-func (a *about) buildUI() *fyne.Container {
-	m:=Getmemoryinfo()
+func (a *theabout) buildUI() *fyne.Container {
+	interfaceContainer := appearance.NewSettings().LoadAppearanceScreen(a.window)
+	bin := os.Args[0]
+	var dtg string
+	fi, err := os.Stat(bin)
+	if err == nil {
+		dtg = "on " + fi.ModTime().Format("2006-01-02.15:04:05")
+	}
+	m := fmt.Sprintf("program %q, compiled with go %s %s\n",bin, runtime.Version(), dtg)
+	m += "\r\n"+Getmemoryinfo()
 	return container.NewVBox(
-		layout.NewSpacer(),
-		container.NewHBox(		
+		&widget.Card{Title: "App Info", Content: container.NewHBox(		
 			layout.NewSpacer(),
 			container.NewVBox(		
-				newBoldLabel("PFSMS"), 
+				NewBoldLabel("PFSMS"), 
 				layout.NewSpacer(),
-				newBoldLabel(version),
+				NewBoldLabel("by Peter Freund"), 
+				NewBoldLabel("prifre@prifre.com"), 
 				layout.NewSpacer(),
-				newBoldLabel(m),
+				NewBoldLabel(m),
 			),
 			layout.NewSpacer(),
-		),
+		)},
 		layout.NewSpacer(),
+		&widget.Card{Title: "User Interface", Content: interfaceContainer},
 	)
 }
-func (a *about) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "About",  Icon: theme.HelpIcon(),Content: a.buildUI()}
+func (s *theabout) tabItem() *container.TabItem {
+	return &container.TabItem{Text: "About pfsms", Icon: theme.SettingsIcon(), Content: s.buildUI()}
 }

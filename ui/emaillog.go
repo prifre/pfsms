@@ -14,25 +14,19 @@ import (
 	pfemail "github.com/prifre/pfsms/email"
 )
 
-type AppEmail struct {
-	// Theme holds the current theme
-	Theme string
-}
-
-type thelog struct {
+type theemaillog struct {
 	btnStart			*widget.Button
 	btnCheck			*widget.Button
 	btnImport 			*widget.Button
 	logtext				*widget.Label
-	appEmail 			*AppEmail
 	window      		fyne.Window
 	app         		fyne.App
 }
 
-func NewEmaillog(a fyne.App, w fyne.Window,  el *AppEmail) *thelog {
-	return &thelog{app: a, window: w,  appEmail: el}
+func NewEmaillog(a fyne.App, w fyne.Window) *theemaillog {
+	return &theemaillog{app: a, window: w}
 }
-func (s *thelog) buildLog() *container.Scroll {
+func (s *theemaillog) buildLog() *container.Scroll {
 	var e pfemail.Etype
 	var err error
 	s.logtext = &widget.Label{}
@@ -88,10 +82,10 @@ func (s *thelog) buildLog() *container.Scroll {
 	))
 }
 
-func (s *thelog) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Mail Log", Icon: theme.ComputerIcon(), Content: s.buildLog()}
+func (s *theemaillog) tabItem() *container.TabItem {
+	return &container.TabItem{Text: "Mail", Icon: theme.ComputerIcon(), Content: s.buildLog()}
 }
-func (s *thelog) Addtolog (m string) {
+func (s *theemaillog) Addtolog (m string) {
 	s.logtext.SetText(fmt.Sprintf("%s%s",s.logtext.Text ,m ))
 	err :=Appendtotextfile("emaillog.txt",m)
 	if err!=nil {

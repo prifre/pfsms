@@ -3,23 +3,19 @@ package ui
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 )
 
 // Create will stitch together all ui components
 func Create(app fyne.App, window fyne.Window) *container.AppTabs {
-	// appTable := &AppTable{}
-	appMessages := &AppMessages{}
-	appEmail := &AppEmail{}
-	appHistory := &AppHistory{}
-	appSettings := &AppSettings{}
-	appSettings.Theme = checkTheme(app.Preferences().StringWithFallback("Theme", "Adaptive (requires restart)"), app)
+	app.Settings().SetTheme(theme.DefaultTheme())
 var tabs []*container.TabItem =  []*container.TabItem{
 		NewTable(app,window,&AppTable{}).tabItem(),
-		NewMessages(app,window,appMessages).tabItem(),
-		NewEmaillog(app,window,appEmail).tabItem(),
-		NewHistory(app,window,appHistory).tabItem(),
-		NewSettings(app, window,  appSettings).tabItem(),
-		NewAbout().tabItem(),
+		NewMessages(app,window).tabItem(),
+		NewEmaillog(app,window).tabItem(),
+		NewSmslog(app,window).tabItem(),
+		NewSettings(app, window).tabItem(),
+		NewAbout(app,window).tabItem(),
 	}
 	return &container.AppTabs{Items:tabs}
 }
