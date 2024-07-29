@@ -47,16 +47,11 @@ func (db *DBtype) Opendb() {
 func (db *DBtype) Setupdb() error {
 	var err error
 	var path string
-	path, err = os.Getwd()
+	path, err = os.UserHomeDir()
 	if err!=nil {
 		panic("path")
 	}
-	if path[len(path)-2:]=="db" {
-		path = path[:len(path)-3]
-	}
-	if path[len(path)-4:]!="data" {
-		path = path + string(os.PathSeparator) + "data"
-	}
+	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, "pfsms")
 	if _, err = os.Stat(path); err != nil {
 		log.Println("#1 Adding folder data: " + path)
 		if os.IsNotExist(err) {
@@ -216,40 +211,6 @@ func (db *DBtype) Deleteall(n string) error {
 	}
 	return err
 }
-func (db *DBtype) ImportCustomers(frfile string) error {
-	var err error
-	var b0 []byte
-	var sq string
-    b0, err = os.ReadFile(frfile) // SQL to make tables!
-    if err != nil {
-        fmt.Print(err)
-    }
-	b:=string(b0)
-	db.Opendb()
-	for i:=0;i<len(strings.Split(b,"\r\n"));i++ {
-		b1:=strings.Split(b,"\r\n")[i]
-		b2:=strings.Split(b1,"\t")
-		if len(b2)<9 || b2[1]=="Exp.Nota" {
-			continue
-		}
-		if i % 100==0 {
-			fmt.Println(i,b2)
-		}
-		sq ="INSERT INTO tblCustomers (expnote,phone,firstname,lastname,indate,outdate)"
-		sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")",sq,b2[1],b2[2],b2[3],b2[4],b2[9],b2[10])
-		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
-		if err != nil {
-			log.Println("#2 prepare failed: ", sq, " ", err.Error())
-			return err
-		}
-		db.reply, err = db.statement.Exec() // Execute SQL Statements
-
-		
-		// KUNDER_ALLA innehåller:
-		// Nr	Exp.Nota	Mobilnr	Förnamn	Efternamn	In	Ut	Sign	Regdatum	Indatum	Utdatum	År	Pärm	Väntetid
-	}
-	return err
-}
 func (db *DBtype) ShowMessages() ([][]string,error) {
 	var err error
 	var ids,reference,message string
@@ -273,8 +234,7 @@ func (db *DBtype) AddMessage(reference string, message string) (int,error) {
 	var r *sql.Rows
 	var reply int
 	db.Opendb()
-	nanostamp := time.Now().UnixNano()
-	tstamp := time.Now().Format(time.RFC3339)
+	tstamp := time.Now().Format("2006-01-02 15:04:05")
 	// fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
 	sq=fmt.Sprintf("SELECT * FROM tblMessages WHERE reference='%s'",reference)
 	r, err = db.conn.Query(sq)
@@ -286,7 +246,7 @@ func (db *DBtype) AddMessage(reference string, message string) (int,error) {
 		//reference exists in db, so just Update
 	}
 	sq="INSERT INTO tblMessages (nanostamp,tstamp,reference,message) "
-	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,reference,message)
+	sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\")",sq,tstamp,reference,message)
 	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 	if err != nil {
 		log.Println("#2 prepare failed: ", sq, " ", err.Error())
@@ -305,11 +265,9 @@ return reply,err
 func (db *DBtype) UpdateMessage(id int,reference string, message string) error {
 	var err error
 	db.Opendb()
-	nanostamp := time.Now().UnixNano()
-	tstamp := time.Now().Format(time.RFC3339)
-	fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
-	sq:="UPDATE tblMessages (nanostamp,tstamp,reference,message) "
-	sq = fmt.Sprintf("%s VALUES (%d,\"%s\",\"%s\",\"%s\")",sq,nanostamp,tstamp,reference,message)
+	tstamp := time.Now().Format("2006-01-02 15:04:05")
+	sq:="UPDATE tblMessages (tstamp,reference,message) "
+	sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\")",sq,tstamp,reference,message)
 	sq = fmt.Sprintf("%s WHERE id = %d",sq,id)
 	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 	if err != nil {
@@ -323,9 +281,6 @@ func (db *DBtype) DeleteMessage(id int) error {
 	var err error
 	var sq string
 	db.Opendb()
-	nanostamp := time.Now().UnixNano()
-	tstamp := time.Now().Format(time.RFC3339)
-	fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
 	sq = fmt.Sprintf("DELETE FROM tblMessages WHERE id = %d",id)
 	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 	if err != nil {
@@ -398,4 +353,77 @@ func (db *DBtype) ShowGroups() ([][]string,error) {
 	// }
 	return data, err
 }
-
+func (db *DBtype) ImportCustomers(frfile string) error {
+	var err error
+	var b0 []byte
+	var sq string
+    b0, err = os.ReadFile(frfile) // SQL to make tables!
+    if err != nil {
+        fmt.Print(err)
+    }
+	b:=string(b0)
+	db.Opendb()
+	for i:=0;i<len(strings.Split(b,"\r\n"));i++ {
+		b1:=strings.Split(b,"\r\n")[i]
+		b2:=strings.Split(b1,"\t")
+		if len(b2)<9 || b2[1]=="Exp.Nota" {
+			continue
+		}
+		if i % 100==0 {
+			fmt.Println(i,b2)
+		}
+		// check if phonenumber already exists
+		r, err := db.conn.Query("SELECT phone FROM tblCustomers WHERE phone = '"+b2[2]+"'")
+		if r==nil && err==nil {
+			sq ="INSERT INTO tblCustomers (expnote,phone,firstname,lastname,indate,outdate)"
+			sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")",sq,b2[1],b2[2],b2[3],b2[4],b2[9],b2[10])
+			db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+			if err != nil {
+				log.Println("#2 prepare failed: ", sq, " ", err.Error())
+				return err
+			}
+			db.reply, err = db.statement.Exec() // Execute SQL Statements
+			if err != nil {
+				log.Println("#3 Exec failed: ", sq, " ", err.Error())
+				return err
+			}
+		}
+		
+		// KUNDER_ALLA innehåller:
+		// Nr	Exp.Nota	Mobilnr	Förnamn	Efternamn	In	Ut	Sign	Regdatum	Indatum	Utdatum	År	Pärm	Väntetid
+	}
+	return err
+}
+func (db *DBtype) ExportCustomers(tofile string) error {
+	var err error
+	var sq,txt,phone,firstname,lastname,note string
+	db.Opendb()
+	sq ="SELECT phone,firstname,lastname,note FROM tblCustomers ORDER BY lastname ASC"
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		fmt.Println("#No customers, returning sample records.", err.Error())
+		return err
+	}
+	if !rows.Next() {
+		// export sample data!!!
+		txt ="+46736290839\tPeter\tFreund\r\n"
+		txt +="087543169\tLin\tZhang\r\n"
+	} else {
+		for rows.Next() {
+			err = rows.Scan(&phone,&firstname,&lastname,&note)
+			if err!=nil {
+				log.Println("#2 ExpotCustomers error,",err.Error())
+			}
+			txt +=fmt.Sprintf("%s\t%s\t%s\r\n",phone,firstname,lastname)
+		}
+	}
+	f, err := os.OpenFile(tofile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(txt); err != nil {
+		log.Println(err)
+	}
+	return err
+}

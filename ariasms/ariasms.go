@@ -51,20 +51,7 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 		log.Fatal("#1 serial.Open(comport)", err)
 	}
 	s.port.SetReadTimeout(s.timeout)
-	// var m []byte
-	// m, err = os.ReadFile(messagefilename)
-	// if err != nil {
-	// 	log.Fatal("#2 ariasms.txt error", err)
-	// }
 	message = strings.TrimSpace(message)
-	// message += "Hej <<Fname>>,\r\n"
-	// message += "Den 14/3, 14-18 kommer Per Ståbi att hålla en kalligrafikurs på Sollentuna Ram.\r\n"
-	// message += "De som inte betalat kursen ännu kan gärna Swisha 1700:- till 0736290839.\r\n"
-	// message += "Vid frågor, ring!\r\n"
-	// message += "Med glada hälsningar\r\n"
-	// message += "Peter & Per"
-	// message = "test"
-	// phonenumbers = getphonenumbers(phonenumbersfilename)
 	log.Printf("Got %d phonenumbers to send ok.\r\n", len(phonenumbers))
 	for i, record := range phonenumbers {
 		if !strings.Contains(record, "\t") {
@@ -105,11 +92,11 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 		success++
 		log.Printf("Message %d/%d to phone %s sent! (failures: %d)\r\n", i+1, len(phonenumbers), phoneNumber, failures)
 		if !s.mydebug {
-			fmt.Printf("%s %s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02"), time.Now().Format("15:04"), i+1, len(phonenumbers), phoneNumber, failures)
+			fmt.Printf("%s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber, failures)
 		}
 	}
 	log.Printf("\r\nRESULT OF SMS SENDING\r\nFailures: %d\r\nSuccess: %d\r\n", failures, success)
-	log.Printf("Started: %s\r\nFinished: %s\r\nDuration: %s\r\n", s.starttime, time.Now(), time.Since(s.starttime))
+	log.Printf("Started: %s\r\nFinished: %s\r\nDuration: %s\r\n", s.starttime, time.Now().Format("2006-01-02 15:04:05"), time.Since(s.starttime))
 	fmt.Printf("Speed: %ds/sms", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
 	s.port.Close()
 }
@@ -242,16 +229,11 @@ func showdebugmsg(s string) string {
 func (s SMStype) Setuplog() {
 	var path string
 	var err error
-	path, err = os.Getwd()
+	path, err = os.UserHomeDir()
 	if err!=nil {
 		panic("path")
 	}
-	if path[len(path)-2:]=="db" {
-		path = path[:len(path)-3]
-	}
-	if path[len(path)-4:]!="data" {
-		path = path + string(os.PathSeparator) + "data"
-	}
+	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"pfsms")
 	if _, err = os.Stat(path); err != nil {
 		log.Println("#1 Adding folder data: " + path)
 		if os.IsNotExist(err) {
@@ -265,7 +247,7 @@ func (s SMStype) Setuplog() {
 			// other error
 		}
 	}
-	s.Logfilename = path + string(os.PathSeparator) + "smslog.txt"
+	s.Logfilename = fmt.Sprintf("%s%csmslog.txt",path ,os.PathSeparator) 
 	f, err := os.OpenFile(s.Logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)

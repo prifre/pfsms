@@ -48,7 +48,7 @@ func Getmemoryinfo() string {
 }
 func (a *theabout) buildUI() *fyne.Container {
 	interfaceContainer := appearance.NewSettings().LoadAppearanceScreen(a.window)
-	bin := os.Args[0]
+	bin := "pfsms"
 	var dtg string
 	fi, err := os.Stat(bin)
 	if err == nil {

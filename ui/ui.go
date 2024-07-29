@@ -12,8 +12,8 @@ func Create(app fyne.App, window fyne.Window) *container.AppTabs {
 var tabs []*container.TabItem =  []*container.TabItem{
 		NewTable(app,window,&AppTable{}).tabItem(),
 		NewMessages(app,window).tabItem(),
-		NewEmaillog(app,window).tabItem(),
 		NewSmslog(app,window).tabItem(),
+		NewEmaillog(app,window).tabItem(),
 		NewSettings(app, window).tabItem(),
 		NewAbout(app,window).tabItem(),
 	}

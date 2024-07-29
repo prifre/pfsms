@@ -13,19 +13,11 @@ func getEmailPasswords() (u string,p string) {
 	var path string
 	var err error
 	var b0 []byte
-	path, err = os.Getwd()
+	path, err = os.UserHomeDir()
 	if err!=nil {
 		panic("path")
 	}
-	if path[len(path)-2:]=="db" {
-		path = path[:len(path)-len("db")-1]
-	}
-	if path[len(path)-len("email"):]=="email" {
-		path = path[:len(path)-len("email")-1]
-	}
-	if path[len(path)-4:]!="data" {
-		path = path + string(os.PathSeparator) + "data"
-	}
+	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, "pfsms")
 	frfile:=path+string(os.PathSeparator)+"emailpasswords.txt"
     b0, err = os.ReadFile(frfile) // SQL to make tables!
     if err != nil {

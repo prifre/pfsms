@@ -1,7 +1,9 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -37,7 +39,7 @@ func (s *theform) buildForm() *container.Scroll {
 	s.message.SetMinRowsVisible(12)
 	s.message.Text="ett litet test!"
 	s.btnSubmit = & widget.Button{Text:"Click to send message",OnTapped: func ()  {
-		s.HandleSubmit(s.phone.Text,s.reference.Text,s.message.Text)
+		s.HandleSendsms(s.phone.Text,s.reference.Text,s.message.Text)
 	}}
 	s.form = &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
@@ -59,7 +61,7 @@ func (s *theform) buildForm() *container.Scroll {
 func (s *theform) tabItem() *container.TabItem {
 	return &container.TabItem{Text: "Messages", Icon: theme.MailSendIcon(), Content: s.buildForm()}
 }
-func (s *theform) HandleSubmit(p,t,m string) {
+func (s *theform) HandleSendsms(p,t,m string) {
 	// split phone into \r\n and ","
 	ph := s.phone.Text
 	ph = strings.Replace(ph,"\r",",",-1)
@@ -76,6 +78,6 @@ func (s *theform) HandleSubmit(p,t,m string) {
 	sms.Addhash=s.app.Preferences().Bool("addHash")
 	sms.SendMessage(p1,m)
 	for i:=0;i<len(p1);i++ {
-		Appendtotextfile("smslog.txt","Sent "+s.message.Text+" to "+p1[i])
+		Appendtotextfile("smslog.txt",fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05")," Sent "+s.message.Text+" to "+p1[i]))
 	}
 }

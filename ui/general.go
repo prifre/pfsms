@@ -15,16 +15,11 @@ func NewBoldLabel(text string) *widget.Label {
 func Appendtotextfile(fn string, m string) error {
 	var err error
 	var path string
-	path, err = os.Getwd()
+	path, err = os.UserHomeDir()
 	if err != nil {
 		panic("path")
 	}
-	if path[len(path)-2:] == "ui" {
-		path = path[:len(path)-3]
-	}
-	if path[len(path)-4:] != "data" {
-		path = path + string(os.PathSeparator) + "data"
-	}
+	path = path + string(os.PathSeparator) + "pfsms"
 	if _, err = os.Stat(path); err != nil {
 		log.Println("#1 Adding folder data: " + path)
 		if os.IsNotExist(err) {
@@ -39,6 +34,9 @@ func Appendtotextfile(fn string, m string) error {
 		}
 	}
 	fn = path + string(os.PathSeparator) + fn
+
+	m=strings.Replace(m,"\r","<CR>",-1)
+	m=strings.Replace(m,"\n","",-1)
 	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)

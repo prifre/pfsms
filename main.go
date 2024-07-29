@@ -5,8 +5,6 @@ package main
 //	"github.com/prifre/pfsms/ui"
 
 import (
-	"fmt"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"github.com/prifre/pfsms/ui"
@@ -19,5 +17,4 @@ func main() {
 	w.Resize(fyne.NewSize(1024,764))
 	w.SetMaster()
 	w.ShowAndRun()
-	fmt.Println("SAVING SETTINGS!")
 }

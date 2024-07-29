@@ -28,7 +28,7 @@ func (s *thesmslog) buildHistory() *container.Scroll {
 }
 
 func (s *thesmslog) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Send SMS", Icon: theme.DocumentIcon(), Content: s.buildHistory()}
+	return &container.TabItem{Text: "SMS", Icon: theme.DocumentIcon(), Content: s.buildHistory()}
 }
 func (s *thesmslog) Addhistory (m string) {
 	s.history.SetText(fmt.Sprintf("%s%s",s.history.Text ,m ))
