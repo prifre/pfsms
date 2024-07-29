@@ -305,11 +305,18 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 		if len(b2)>3 {
 			note = b2[3]
 		}
-		r, err := db.conn.Query("SELECT phone FROM tblCustomers WHERE phone = '"+phone+"'")
-		if err!=nil {
-			log.Println("#2 ImportCustomers SELECT",err.Error())
+		var cnt string
+		r, err := db.conn.Query("SELECT COUNT(*) AS cnt FROM tblCustomers WHERE phone = '"+phone+"'")
+		if err==nil {
+			for r.Next() {
+				err = r.Scan(&cnt)
+				if err!=nil {
+					log.Println("#1 ImportCustomers Error Scan)",err.Error())
+				}
+				fmt.Println(cnt)
+			}
 		}
-		if r.Next() {
+			if r.Next() {
 			continue
 		}
 		sq ="INSERT INTO tblCustomers (phone,firstname,lastname,note)"

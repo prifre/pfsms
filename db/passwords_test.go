@@ -11,9 +11,7 @@ func TestCheckPasswords(t *testing.T) {
 	var h string
 	var txt string="Detta är en teststräng."
 	var err error
-	db:=new(DBtype)
-	db.Opendb()
-	h, err = db.MakeHash()
+	h, err = MakeHash()
 	if err!=nil {
 		t.Fatalf("SetHash failed %s",err.Error())
 	}

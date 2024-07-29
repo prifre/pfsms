@@ -61,7 +61,8 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.app.Preferences().SetString("eUser",s.emailUser.Text)
 	}}
 	s.emailPLabel = &widget.Label{Text: "Email Password", TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailPassword = &widget.Entry{Text:s.getPassword(),OnChanged: func(v string) {
+	p:=s.getPassword()
+	s.emailPassword = &widget.Entry{Text:p,OnChanged: func(v string) {
 		s.setPassword(s.emailPassword.Text)
 	}}
 	s.emailFLabel = &widget.Label{Text:
@@ -88,14 +89,10 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.emailPLabel, s.emailPassword,
 		s.emailFLabel,s.emailFrequency,
 	)
-
-
 	s.logtext = &widget.Label{}
 	s.btnCheck = &widget.Button{Text:"Check Email",OnTapped: func() {
-		d:=new(db.DBtype)
-		d.Opendb()
 		var hash,p string
-		hash, err =d.MakeHash()
+		hash, err =db.MakeHash()
 		if err!=nil {
 			log.Println("buildLog MakeHash error ",err.Error())
 		}
@@ -121,11 +118,9 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.logtext.Refresh()
 	}}
 	s.btnStart = &widget.Button{Text:"Start Email",OnTapped: func() {
-		d:=new(db.DBtype)
-		d.Opendb()
 		var hash string
 		var p string
-		hash , err = d.MakeHash()
+		hash , err = db.MakeHash()
 		if err!=nil {
 			log.Println("buildLog MakeHash error ",err.Error())
 		}
@@ -179,11 +174,9 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 	}
 	func (s *theemaillog) getPassword() string {
 		prefPassword:= s.app.Preferences().StringWithFallback("ePassword","")
-		d:=new(db.DBtype)
-		d.Opendb()
 		var hash,realPassword string
 		var err error
-		hash,err =d.MakeHash()
+		hash,err =db.MakeHash()
 		if err!=nil {
 			log.Println("buildLog onUseEmailChanged MakeHash error ",err.Error())
 		}
@@ -194,11 +187,9 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 		return realPassword
 	}
 	func (s *theemaillog) setPassword(realPassword string) error {
-		d:=new(db.DBtype)
-		d.Opendb()
 		var hash,prefPassword string
 		var err error
-		hash,err =d.MakeHash()
+		hash,err =db.MakeHash()
 		if err!=nil {
 			log.Println("buildLog setPassord MakeHash error ",err.Error())
 		}

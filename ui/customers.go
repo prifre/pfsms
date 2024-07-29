@@ -53,6 +53,7 @@ func (s *thetable) listCustomers() *widget.Table {
 	listCustomers.SetColumnWidth(0,20)
 	listCustomers.SetRowHeight(0,20)
 	listCustomers.BaseWidget.Resize(fyne.NewSize(1000,1000))
+	d.Closedatabase()
 	return listCustomers
 }
 func (s *thetable) buildTableCustomers() *container.Scroll {
