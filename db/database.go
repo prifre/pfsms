@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"fyne.io/fyne/v2"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -17,7 +18,6 @@ type DBtype struct {
 	statement    *sql.Stmt
 	reply        sql.Result
 	Databasepath string
-	hash		string
 }
 
 func (db *DBtype) Opendb() {
@@ -38,11 +38,6 @@ func (db *DBtype) Opendb() {
 			panic(err.Error())
 		}
 	}
-	db.MakeHash()
-	// db.conn.SetMaxOpenConns(1)
-	// db.conn.SetMaxIdleConns(0)
-	// db.conn.SetConnMaxIdleTime(time.Second * 5)
-	// db.conn.SetConnMaxLifetime(time.Second * 5)
 }
 func (db *DBtype) Setupdb() error {
 	var err error
@@ -94,121 +89,50 @@ func (db *DBtype) Closedatabase() error {
 func (db *DBtype) Createtables() error {
 	var err error
 	// check if table exists
-	db.Opendb()
+	db.conn, err = sql.Open("sqlite3", db.Databasepath) // Open the created SQLite File
+	if err != nil {
+		log.Fatal("#1 Createtables sql.Open ", err.Error())
+	}
 	_, table_check := db.conn.Query("SELECT * FROM tblCustomers;")
-
 	if table_check == nil {
 		return nil
 		//table tblMain exists, so probably all is well...
 	}
 	//create tables...
-    b, err := os.ReadFile("createtables.sql") // SQL to make tables!
-    if err != nil {
-        fmt.Print(err)
-    }
-    s := string(b) // convert content to a 'string'	for _, s := range sq {
-	s=strings.Replace(s,"\r"," ",-1)
-	s=strings.Replace(s,"\n"," ",-1)
-	s=strings.TrimSpace(s)
-	for i:=0;i<len(strings.Split(s,";"));i++ {
-		sq:=strings.Split(s,";")[i]
-		if len(sq)<10 {
+	var s =	 "CREATE TABLE tblMessages (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+		s += "tstamp VARCHAR(25), reference VARCHAR(100), message TEXT);"
+
+		s += "CREATE TABLE tblCustomers (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+   		s += "phone VARCHAR(20), firstname VARCHAR(100), lastname VARCHAR(100), note TEXT);"
+
+		s += "CREATE TABLE tblGroups (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+   		s += "groupname VARCHAR(100), phone VARCHAR(100));"
+
+		s += "CREATE TABLE tblHistory (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+   		s += "tstamp VARCHAR(20), phone VARCHAR(20), reference VARCHAR(100), message TEXT);"
+
+		s += "CREATE TABLE tblHashtable (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+   		s += "hash VARCHAR(100));"
+	sq :=strings.Split(s,";")
+	for i:=0;i<len(sq);i++ {
+		if len(sq[i])<10 {
 			continue
 		}
-		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		db.statement, err = db.conn.Prepare(sq[i]) // Prepare SQL Statement
 		if err != nil {
 			if err.Error() == "table tblCustomers already exists" {
 				err = nil
 				return err
 			}
-			log.Println("#1 CreateTables: ", err.Error())
+			log.Println("#1 CreateTables: '",sq[i],"'", err.Error())
 		}
 		db.reply, err = db.statement.Exec() // Execute SQL Statements
 		if err != nil {
-			log.Println("#2 CreateTables failed: ", sq, " ", err.Error(), db.reply)
+			log.Println("#2 CreateTables failed: ", sq[i], " ", err.Error(), db.reply)
 			return err
 		}
 	}
-	return err
-}
-func (db *DBtype) Getsql(sq string) ([]string, error) {
-// get one value from database quickly...
-var err error
-	var k []string
-	var s sql.NullString
-	var s2 string
-	db.Opendb()
-	rows, err := db.conn.Query(sq)
-	if err != nil {
-		fmt.Println("#2 Getsql Query error:", err.Error())
-		return nil, err
-	}
-	col, err := rows.Columns()
-	if err != nil {
-		fmt.Println("#3 Getsql Col error", err.Error())
-		return nil, err
-	}
-	if len(col) > 1 {
-		log.Println("#4 Getsql too many columns in query! Do your own query!")
-		return nil, fmt.Errorf("too many columns!%v", "")
-	}
-	var ct []*sql.ColumnType
-	ct, err = rows.ColumnTypes()
-	if err != nil {
-		fmt.Println("#5 Getsql CT error", err.Error())
-	}
-	for rows.Next() {
-		switch strings.ToUpper(ct[0].DatabaseTypeName()) {
-		case "INTEGER":
-			var x int64
-			err = rows.Scan(&x)
-			if err != nil {
-				fmt.Println("#6 Getsql Scan error", err.Error())
-			}
-			s2 = fmt.Sprintf("%v", x)
-		case "TEXT":
-			err = rows.Scan(&s)
-			s2 = ""
-			if s.Valid {
-				s2 = fmt.Sprintf("%v", s.String)
-			}
-			if err != nil {
-				fmt.Println("#6 Getsql Scan error", err.Error())
-			}
-		default:
-			err = rows.Scan(&s)
-			// COUNT(*)...
-			if s.Valid {
-				s2 = fmt.Sprintf("%v", s.String)
-			}
-		}
-		k = append(k, s2)
-	}
-	return k, err
-}
-func (db *DBtype) Deleteall(n string) error {
-// delete the database file?
-
-	var err error
-	var sq []string
-	// remove from database
-	db.Opendb()
-	sq = append(sq, "DELETE FROM tblDustTrak WHERE nanostamp="+n)
-	sq = append(sq, "DELETE FROM tblPTrak WHERE nanostamp="+n)
-	sq = append(sq, "DELETE FROM tblAeroTrak WHERE nanostamp="+n)
-	sq = append(sq, "DELETE FROM tblMain WHERE nanostamp="+n)
-	for i := 0; i < len(sq); i++ {
-		db.statement, err = db.conn.Prepare(sq[i]) // Prepare SQL Statement
-		if err != nil {
-			log.Println("#2 deleteall prepare failed: ", sq[i], " ", err.Error())
-			return err
-		}
-		db.reply, err = db.statement.Exec() // Execute SQL Statements
-		if err != nil {
-			log.Println("#3 deleteall exec failed: ", sq[i], " ", err.Error(), db.reply)
-			return err
-		}
-	}
+	db.conn.Close()
 	return err
 }
 func (db *DBtype) ShowMessages() ([][]string,error) {
@@ -226,6 +150,7 @@ func (db *DBtype) ShowMessages() ([][]string,error) {
 		err = rows.Scan(&ids,&reference,&message)
 		data=append(data,[]string{ids,reference,message})
 	}
+	db.Closedatabase()
 	return data,err
 }
 func (db *DBtype) AddMessage(reference string, message string) (int,error) {
@@ -260,7 +185,8 @@ func (db *DBtype) AddMessage(reference string, message string) (int,error) {
 	var r0 int64
 	r0,err =db.reply.LastInsertId()
 	reply=int(r0)
-return reply,err
+	db.Closedatabase()
+	return reply,err
 }
 func (db *DBtype) UpdateMessage(id int,reference string, message string) error {
 	var err error
@@ -275,7 +201,8 @@ func (db *DBtype) UpdateMessage(id int,reference string, message string) error {
 		return err
 	}
 	db.reply, err = db.statement.Exec() // Execute SQL Statements
-return err
+	db.Closedatabase()
+	return err
 }
 func (db *DBtype) DeleteMessage(id int) error {
 	var err error
@@ -288,7 +215,8 @@ func (db *DBtype) DeleteMessage(id int) error {
 		return err
 	}
 	db.reply, err = db.statement.Exec() // Execute SQL Statements
-return err
+	db.Closedatabase()
+	return err
 }
 func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 	var data [][]string
@@ -311,6 +239,7 @@ func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 		err = rows.Scan(&id,&phone,&firstname,&lastname)
 		data=append(data,[]string{fmt.Sprintf("%d: %s   %s %s",id,phone,firstname,lastname)})
 	}
+	db.Closedatabase()
 	return data, err
 }
 func (db *DBtype) ShowGroupnames() ([][]string,error) {
@@ -320,7 +249,7 @@ func (db *DBtype) ShowGroupnames() ([][]string,error) {
 	var id int
 	var groupname string
 	db.Opendb()
-	sq:="SELECT * FROM tblGroupnames ORDER BY groupname ASC"
+	sq:="SELECT DISTINCT groupname FROM tblGroups ORDER BY groupname ASC"
 	rows, err := db.conn.Query(sq)
 	if err != nil {
 		fmt.Println("#2 ShowGropupnames Query error:", err.Error())
@@ -330,100 +259,196 @@ func (db *DBtype) ShowGroupnames() ([][]string,error) {
 		err = rows.Scan(&id,&groupname)
 		data=append(data,[]string{groupname})
 	}
-	return data, err
-}
-func (db *DBtype) ShowGroups() ([][]string,error) {
-	// the ShowGroups should show groups based on CustomerID selected []id
-	var data [][]string
-	var err error
-	data=append(data,[]string{"test","test2","test3"})
-	
-	// var id int
-	// var phone,firstname,lastname string
-	// db.Opendb()
-	// sq:=fmt.Sprintf("SELECT id FROM tblGroups WHERE id>%d AND id<=%d",from,to)
-	// rows, err := db.conn.Query(sq)
-	// if err != nil {
-	// 	fmt.Println("#2 ShowGroups Query error:", err.Error())
-	// 	return nil, err
-	// }
-	// for rows.Next() {
-	// 	err = rows.Scan(&id,&phone,&firstname,&lastname)
-	// 	data=append(data,[]string{fmt.Sprintf("%d",id),phone,firstname,lastname})
-	// }
+	db.Closedatabase()
 	return data, err
 }
 func (db *DBtype) ImportCustomers(frfile string) error {
+	// customer textfile should be phone <<tab>> firstname <<tab>> lastname <<tab>> note <<cr>> <<lf>>
 	var err error
 	var b0 []byte
-	var sq string
+	var sq,phone,firstname,lastname,note string
     b0, err = os.ReadFile(frfile) // SQL to make tables!
     if err != nil {
-        fmt.Print(err)
+        log.Println("#1 ImportCustomers", err.Error())
     }
 	b:=string(b0)
-	db.Opendb()
-	for i:=0;i<len(strings.Split(b,"\r\n"));i++ {
-		b1:=strings.Split(b,"\r\n")[i]
-		b2:=strings.Split(b1,"\t")
-		if len(b2)<9 || b2[1]=="Exp.Nota" {
-			continue
+	b= strings.Replace(b,"\n","",-1)
+	cc := fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
+	var cci string ="00"
+	for i:=0;i<len(cc);i++ {
+		if strings.Index("0123456789",string(cc[i]))>0 {
+			cci +=string(cc[i])
 		}
+	}
+
+	db.Opendb()
+	for i:=0;i<len(strings.Split(b,"\r"));i++ {
+		b1:=strings.Split(b,"\r")[i]
+		b2:=strings.Split(b1,"\t")
 		if i % 100==0 {
 			fmt.Println(i,b2)
 		}
 		// check if phonenumber already exists
-		r, err := db.conn.Query("SELECT phone FROM tblCustomers WHERE phone = '"+b2[2]+"'")
-		if r==nil && err==nil {
-			sq ="INSERT INTO tblCustomers (expnote,phone,firstname,lastname,indate,outdate)"
-			sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")",sq,b2[1],b2[2],b2[3],b2[4],b2[9],b2[10])
-			db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
-			if err != nil {
-				log.Println("#2 prepare failed: ", sq, " ", err.Error())
-				return err
-			}
-			db.reply, err = db.statement.Exec() // Execute SQL Statements
-			if err != nil {
-				log.Println("#3 Exec failed: ", sq, " ", err.Error())
-				return err
-			}
+		firstname=""
+		lastname=""
+		note=""
+		phone=""
+		if len(b2)>0 {
+			phone = Fixphonenumber(b2[0],cci)
 		}
-		
-		// KUNDER_ALLA innehåller:
-		// Nr	Exp.Nota	Mobilnr	Förnamn	Efternamn	In	Ut	Sign	Regdatum	Indatum	Utdatum	År	Pärm	Väntetid
+		if len(b2)>1 {
+			firstname = b2[1]
+		}
+		if len(b2)>2 {
+			lastname = b2[2]
+		}
+		if len(b2)>3 {
+			note = b2[3]
+		}
+		r, err := db.conn.Query("SELECT phone FROM tblCustomers WHERE phone = '"+phone+"'")
+		if err!=nil {
+			log.Println("#2 ImportCustomers SELECT",err.Error())
+		}
+		if r.Next() {
+			continue
+		}
+		sq ="INSERT INTO tblCustomers (phone,firstname,lastname,note)"
+		sq = fmt.Sprintf("%s VALUES ('%s','%s','%s','%s')",sq,phone,firstname,lastname,note)
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			log.Println("#2 ImportCustomers prepare failed: ", sq, " ", err.Error())
+			return err
+		}
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			log.Println("#3 ImportCustomers Exec failed: ", sq, " ", err.Error())
+			return err
+		}
 	}
+	db.Closedatabase()
 	return err
 }
 func (db *DBtype) ExportCustomers(tofile string) error {
 	var err error
 	var sq,txt,phone,firstname,lastname,note string
 	db.Opendb()
-	sq ="SELECT phone,firstname,lastname,note FROM tblCustomers ORDER BY lastname ASC"
+	sq ="SELECT phone,firstname,lastname,note FROM tblCustomers ORDER BY phone ASC"
 	rows, err := db.conn.Query(sq)
 	if err != nil {
-		fmt.Println("#No customers, returning sample records.", err.Error())
-		return err
+		log.Println("#1 ExportCustomers ", err.Error())
 	}
 	if !rows.Next() {
 		// export sample data!!!
 		txt ="+46736290839\tPeter\tFreund\r\n"
 		txt +="087543169\tLin\tZhang\r\n"
+		txt +="04690510\tFröken\tUr\tClock\r\n"
+		txt +="+12024561111\tWhite\tHouse\tin USA\r\n"
 	} else {
 		for rows.Next() {
 			err = rows.Scan(&phone,&firstname,&lastname,&note)
 			if err!=nil {
 				log.Println("#2 ExpotCustomers error,",err.Error())
 			}
-			txt +=fmt.Sprintf("%s\t%s\t%s\r\n",phone,firstname,lastname)
+			txt +=fmt.Sprintf("%s\t%s\t%s\t%s\r\n",phone,firstname,lastname,note)
 		}
 	}
-	f, err := os.OpenFile(tofile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(tofile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Println(err)
+		log.Println("#3 ExpotCustomers error,",err.Error())
 	}
 	defer f.Close()
 	if _, err := f.WriteString(txt); err != nil {
-		log.Println(err)
+		log.Println("#4 ExpotCustomers error,",err.Error())
 	}
+	db.Closedatabase()
 	return err
+}
+func (db *DBtype) ImportGroups(frfile string) error {
+	// customer textfile should be phone <<tab>> firstname <<tab>> lastname <<tab>> note <<cr>> <<lf>>
+	var err error
+	var b0 []byte
+	var sq string
+    b0, err = os.ReadFile(frfile) // SQL to make tables!
+    if err != nil {
+        log.Println("#1 ImportGroups", err.Error())
+    }
+	b:=string(b0)
+	b= strings.Replace(b,"\n","",-1)
+	db.Opendb()
+	for i:=0;i<len(strings.Split(b,"\r"));i++ {
+		b1:=strings.Split(b,"\r")[i]
+		b2:=strings.Split(b1,"\t")
+		sq ="INSERT INTO tblGroups (groupname,phone)"
+		sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\")",sq,b2[0],b2[1])
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			log.Println("#2 ImportGroups prepare", err.Error())
+			return err
+		}
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			log.Println("#2 ImportGroups Exec", err.Error())
+			return err
+		}
+	}
+	db.Closedatabase()
+	return err
+}
+func (db *DBtype) ExportGroups(tofile string) error {
+	var err error
+	var sq,txt,groupname,phone string
+	db.Opendb()
+	sq ="SELECT groupname,phone FROM tblGroups ORDER BY groupname ASC"
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		log.Println("#1 ExportGroups ", err.Error())
+	}
+	if !rows.Next() {
+		// export sample data!!!
+		txt ="Sample\t0046736290839\r\n"
+		txt +="Sample\t004687543169\r\n"
+		txt +="Sample\t04690510\r\n"
+		txt +="Sample\t0012024561111\r\n"
+	} else {
+		for rows.Next() {
+			err = rows.Scan(&groupname,&phone)
+			if err!=nil {
+				log.Println("#2 ExpotGroups error,",err.Error())
+			}
+			txt +=fmt.Sprintf("%s\t%s\r\n",groupname,phone)
+		}
+	}
+	f, err := os.OpenFile(tofile, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println("#4 ExpotGroups error,",err.Error())
+	}
+	defer f.Close()
+	if _, err := f.WriteString(txt); err != nil {
+		log.Println("#4 ExpotGroups error,",err.Error())
+	}
+	db.Closedatabase()
+	return err
+}
+func Fixphonenumber(pn string,cc string) string {
+	// pn phonenumber  cc coutrycode
+	// Sweden (+46) converts to 0046
+	var cci string ="00"
+	if len(pn)<5 {
+		return ""
+	}
+	for i:=0;i<len(cc);i++ {
+		if strings.Index("0123456789",string(cc[i]))>0 {
+			cci +=string(cc[i])
+		}
+	}
+	if pn[0:2]==string("00") {
+		return pn
+	}
+	if string(pn[0])=="0" {
+		return  cci+pn[1:]
+	}
+	if string(pn[0])=="+" {
+		return "00"+pn[1:]
+	}
+	return cci+pn
 }

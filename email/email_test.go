@@ -17,9 +17,8 @@ func getEmailPasswords() (u string,p string) {
 	if err!=nil {
 		panic("path")
 	}
-	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, "pfsms")
-	frfile:=path+string(os.PathSeparator)+"emailpasswords.txt"
-    b0, err = os.ReadFile(frfile) // SQL to make tables!
+	path = fmt.Sprintf("%s%c%s%s%s",path ,os.PathSeparator, "pfsms",os.PathSeparator,"emailpasswords.txt")
+    b0, err = os.ReadFile(path) // SQL to make tables!
     if err != nil {
         fmt.Print(err)
     }

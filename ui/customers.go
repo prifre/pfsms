@@ -100,5 +100,5 @@ return bigContainer
 }
 
 func (s *thetable) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Table", Icon: theme.GridIcon(), Content: s.buildTable()}
+	return &container.TabItem{Text: "Customers", Icon: theme.StorageIcon(), Content: s.buildTable()}
 }

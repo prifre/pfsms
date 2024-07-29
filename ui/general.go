@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -11,7 +13,6 @@ import (
 func NewBoldLabel(text string) *widget.Label {
 	return &widget.Label{Text: text, TextStyle: fyne.TextStyle{Bold: true}}
 }
-
 func Appendtotextfile(fn string, m string) error {
 	var err error
 	var path string
@@ -19,7 +20,7 @@ func Appendtotextfile(fn string, m string) error {
 	if err != nil {
 		panic("path")
 	}
-	path = path + string(os.PathSeparator) + "pfsms"
+	path = fmt.Sprintf("%s%c%s",path,os.PathSeparator,"pfsms")
 	if _, err = os.Stat(path); err != nil {
 		log.Println("#1 Adding folder data: " + path)
 		if os.IsNotExist(err) {
@@ -33,8 +34,7 @@ func Appendtotextfile(fn string, m string) error {
 			// other error
 		}
 	}
-	fn = path + string(os.PathSeparator) + fn
-
+	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
 	m=strings.Replace(m,"\r","<CR>",-1)
 	m=strings.Replace(m,"\n","",-1)
 	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -47,11 +47,9 @@ func Appendtotextfile(fn string, m string) error {
 	}
 	return err
 }
+func GetAllCountries() []string {
 // Countries taken from github.com/IftekherSunny/go_country and from
 // https://en.wikipedia.org/wiki/List_of_country_calling_codes
-
-
-func GetAllCountries() []string {
 	var  thecountries = []string{
 		"Afghanistan (+93)",
 		"Albania (+355)",
@@ -300,7 +298,7 @@ func GetAllCountries() []string {
 		"Zimbabwe} (+263)"}
 	return thecountries
 }
-  func Fixphonenumber(pn string,cc string) string {
+func Fixphonenumber(pn string,cc string) string {
 	// pn phonenumber  cc coutrycode
 	// Sweden (+46) converts to 0046
 	var cci string ="00"
@@ -319,4 +317,54 @@ func GetAllCountries() []string {
 		return "00"+pn[1:]
 	}
 	return cci+pn
-  }
+}
+func Setuplog() {
+	var wrt io.Writer
+	var path string
+	var err error
+	path, err = os.UserHomeDir()
+	if err!=nil {
+		panic("path")
+	}
+	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"pfsms")
+	if _, err = os.Stat(path); err != nil {
+		log.Println("#1 Adding folder data: " + path)
+		if os.IsNotExist(err) {
+			err = os.Mkdir(path, 0755)
+			if err!=nil {
+				panic(err.Error())
+			}
+			// file does not exist
+		} else {
+			panic(err.Error())
+			// other error
+		}
+	}
+	f, err := os.OpenFile( fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"smslog.txt"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	//	defer f.Close()
+	wrt = io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
+}
+func Getcustomersfilename() string {
+	var path string
+	var err error
+	path, err = os.UserHomeDir()
+	if err!=nil {
+		panic("path")
+	}
+	path = fmt.Sprintf("%s%c%s%c%s",path ,os.PathSeparator,"pfsms",os.PathSeparator,"customers.txt")
+	return path
+}
+func Getgroupsfilename() string {
+	var path string
+	var err error
+	path, err = os.UserHomeDir()
+	if err!=nil {
+		panic("path")
+	}
+	path = fmt.Sprintf("%s%c%s%c%s",path ,os.PathSeparator,"pfsms",os.PathSeparator,"groups.txt")
+	return path
+}

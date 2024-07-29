@@ -9,9 +9,7 @@ package ariasms
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"strings"
 	"time"
 	"unicode/utf16"
@@ -21,8 +19,6 @@ import (
 )
 
 type SMStype struct {
-	Logfilename string 
-	wrt 		io.Writer
 	mydebug 	bool
 	Comport 	string 
 	timeout 	time.Duration
@@ -31,13 +27,13 @@ type SMStype struct {
 	Addhash		bool
 }
 
-func (s *SMStype) SendMessage(phonenumbers []string, message string) {
+func (s *SMStype) SendMessage(phonenumbers []string, message string) error {
 	// Replace with the correct serial port of the modem
 	var sendtext, phoneNumber, Fname, Lname string
 	var failures, success int
 	var err error
 	s.mydebug= true
-	s.Setuplog()
+	// s.Setuplog()
 	s.starttime = time.Now()
 	s.timeout = time.Millisecond * 700
 	mode := &serial.Mode{
@@ -48,7 +44,8 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 	}
 	s.port, err = serial.Open(s.Comport, mode)
 	if err != nil {
-		log.Fatal("#1 serial.Open(comport)", err)
+		log.Printf("#1 serial.Open(comport) %s\r\n", err.Error())
+		return err
 	}
 	s.port.SetReadTimeout(s.timeout)
 	message = strings.TrimSpace(message)
@@ -92,13 +89,16 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) {
 		success++
 		log.Printf("Message %d/%d to phone %s sent! (failures: %d)\r\n", i+1, len(phonenumbers), phoneNumber, failures)
 		if !s.mydebug {
-			fmt.Printf("%s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber, failures)
+			log.Printf("%s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber, failures)
 		}
 	}
-	log.Printf("\r\nRESULT OF SMS SENDING\r\nFailures: %d\r\nSuccess: %d\r\n", failures, success)
-	log.Printf("Started: %s\r\nFinished: %s\r\nDuration: %s\r\n", s.starttime, time.Now().Format("2006-01-02 15:04:05"), time.Since(s.starttime))
-	fmt.Printf("Speed: %ds/sms", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
+	log.Printf("RESULT OF SMS SENDING: Failures: %d Success: %d\r\n", failures, success)
+	s1:=s.starttime.Format("2006-01-02 15:04:05")
+	s2:=time.Now().Format("2006-01-02 15:04:05")
+	log.Printf("Started: %s  Finished: %s  Duration: %s\r\n",s1 , s2, time.Since(s.starttime))
+	log.Printf("Speed: %ds/sms", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
 	s.port.Close()
+	return nil
 }
 func (s SMStype) SendSMS(phoneNumber string, message string) bool {
 	var pduarray []string
@@ -133,7 +133,7 @@ func myread(port serial.Port) string {
 	for {
 		n, err := port.Read(buff)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Error #1 myread()", err.Error())
 			break
 		}
 		if n == 0 {
@@ -217,77 +217,6 @@ func CreatePDU(number string, message string, udh string) string {
 	pdu = strings.TrimSpace(pdu)
 	return pdu
 }
-func showdebugmsg(s string) string {
-	r2 := s
-	r2 = strings.Replace(r2, string(rune(13)), "\\r", -1)
-	r2 = strings.Replace(r2, string(rune(10)), "\\n", -1)
-	r2 = strings.Replace(r2, string(rune(0)), "\\0", -1)
-	r2 = strings.Replace(r2, string(rune(9)), "\\t", -1)
-	r2 = strings.Replace(r2, string(rune(26)), "\\z", -1)
-	return r2
-}
-func (s SMStype) Setuplog() {
-	var path string
-	var err error
-	path, err = os.UserHomeDir()
-	if err!=nil {
-		panic("path")
-	}
-	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"pfsms")
-	if _, err = os.Stat(path); err != nil {
-		log.Println("#1 Adding folder data: " + path)
-		if os.IsNotExist(err) {
-			err = os.Mkdir(path, 0755)
-			if err!=nil {
-				panic(err.Error())
-			}
-			// file does not exist
-		} else {
-			panic(err.Error())
-			// other error
-		}
-	}
-	s.Logfilename = fmt.Sprintf("%s%csmslog.txt",path ,os.PathSeparator) 
-	f, err := os.OpenFile(s.Logfilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	//	defer f.Close()
-	if s.mydebug { // write to both screen and file!!!
-		s.wrt = io.MultiWriter(os.Stdout, f)
-	} else {
-		s.wrt = f
-	}
-	log.SetOutput(s.wrt)
-}
-// func getphonenumbers(fn string) []string {
-// 	// Read the text file
-// 	data, err := os.ReadFile(fn)
-// 	if err != nil {
-// 		fmt.Println("Error reading file:", err)
-// 		return nil
-// 	}
-
-// 	// Convert the data to a string
-// 	text := string(data)
-// 	text = strings.TrimSpace(text)
-// 	text = strings.Replace(text, "\n", "\r", -1)
-// 	text = strings.Replace(text, "\r\r", "\r", -1)
-// 	text = strings.Replace(text, "\r0", "\r+46", -1)
-// 	if text[:1] == "0" {
-// 		text = "+46" + text[1:]
-// 	}
-
-// 	// Split the text into an array of phone numbers
-// 	if !strings.Contains(text, "\t") && strings.Contains(text, " ") {
-// 		text = strings.Replace(text, " ", "\t", -1)
-// 		for strings.Contains(text, "\t\t") {
-// 			text = strings.Replace(text, "\t\t", "\t", -1)
-// 		}
-// 	}
-// 	phoneNumbers := strings.Split(text, "\r")
-// 	return phoneNumbers
-// }
 func (s SMStype) Modemreset() bool {
 	var r string
 	s.port.Break(time.Second)
@@ -315,7 +244,7 @@ func (s SMStype) Modemreset() bool {
 	s.port.Write([]byte("AT+CMGF=0\r\n")) // Set PDU mode
 	r += myread(s.port)
 	if s.mydebug {
-		fmt.Println("MODEMRESET: ", showdebugmsg(r))
+		log.Println("MODEMRESET: ", showdebugmsg(r))
 	}
 	if strings.Contains(strings.ToUpper(r), "ERROR") || !strings.Contains(r, "OK") || len(r) == 0 {
 		return false
@@ -333,4 +262,13 @@ func slowwrite(port serial.Port, s string) {
 }
 func (s SMStype) GetPortsList() ([]string, error) {
 		return serial.GetPortsList()
+}
+func showdebugmsg(s string) string {
+	r2 := s
+	r2 = strings.Replace(r2, string(rune(13)), "\\r", -1)
+	r2 = strings.Replace(r2, string(rune(10)), "\\n", -1)
+	r2 = strings.Replace(r2, string(rune(0)), "\\0", -1)
+	r2 = strings.Replace(r2, string(rune(9)), "\\t", -1)
+	r2 = strings.Replace(r2, string(rune(26)), "\\z", -1)
+	return r2
 }

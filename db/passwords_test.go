@@ -8,24 +8,27 @@ import (
 func TestCheckPasswords(t *testing.T) {
 	var r,result string
 	var starthash string = "23546546346"
+	var h string
 	var txt string="Detta är en teststräng."
 	var err error
 	db:=new(DBtype)
 	db.Opendb()
-	err = db.MakeHash()
+	h, err = db.MakeHash()
 	if err!=nil {
 		t.Fatalf("SetHash failed %s",err.Error())
 	}
-	if db.hash !=starthash {
-		fmt.Println("Old hash exists: ",db.hash)
+	if h !=starthash {
+		fmt.Println("Old hash exists: ",h)
 	}
-	r,err =db.EncryptPassword(txt)
-	fmt.Println(r)
+	r,err =EncryptPassword(txt,h)
 	if err!=nil {
 		t.Fatalf("Encrypt failed %s",err.Error())
 	}
-	result,err = db.DecryptPassword(r)
+	fmt.Println("Original text:",txt)
+	fmt.Println("Encryptedtext:",r)
+	result,err = DecryptPassword(r,h)
 	if result != txt {
 		t.Fatalf("Decrypt failed %s",err.Error())
 	}
+	fmt.Println("Decryptedtext:",result)
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -12,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/ariasms"
+	"github.com/prifre/pfsms/db"
 )
 var (
 	onOffOptions 	= []string{"On", "Off"}
@@ -23,11 +25,15 @@ type settings struct {
 	mobileModel  		*widget.Select
 	mobilePort  		*widget.Select
 	mobileAddhash		*widget.Check
-	btnTestSMS		*widget.Button
+	btnTestSMS			*widget.Button
 
-	btnOpenDatadir		*widget.Button
-	fileCustomers		*widget.Entry
-	fileGroups			*widget.Entry
+	btnOpenDatadir			*widget.Button
+	fileCustomers			*widget.Label
+	fileGroups				*widget.Label
+	btnCustomersImport 		*widget.Button
+	btnCustomersExport		*widget.Button
+	btnGroupsImport 		*widget.Button
+	btnGroupsExport			*widget.Button
 
 	window  		    fyne.Window
 	app        			fyne.App
@@ -83,19 +89,48 @@ func (s *settings) buildUI() *container.Scroll {
 	)
 	s.btnOpenDatadir = &widget.Button{Text:"Click to open data directory.",OnTapped: func ()  {
 		dd,_:=os.UserHomeDir()
-		dd = fmt.Sprintf("%s%c",dd,os.PathSeparator)
-		cmd := exec.Command(`explorer`, `/select,`, dd)
-		cmd.Run()
+		dd = fmt.Sprintf("%s%c%s%c%s",dd,os.PathSeparator,"pfsms",os.PathSeparator,".")
+
+		if runtime.GOOS == "darwin" {
+			cmd := `open "` + dd + `"`
+			exec.Command("/bin/bash", "-c", cmd).Start()
+		} else {
+			exec.Command("explorer", dd).Start()
+		}
 	}}
-	s.fileCustomers = &widget.Entry{Text:s.app.Preferences().StringWithFallback("fileCustomers",""),OnChanged: func(v string) {
-		s.app.Preferences().SetString("fileCustomers",s.fileCustomers.Text)
-	}}
-	s.fileGroups = &widget.Entry{Text:s.app.Preferences().StringWithFallback("fileGroups",""),OnChanged: func(v string) {
-		s.app.Preferences().SetString("fileGroups",s.fileCustomers.Text)
-	}}
+	// Customers ImportExport
+	s.btnCustomersImport = widget.NewButton("Import Customers",func() {
+		importfilename := s.app.Preferences().StringWithFallback("fileCustomers",Getcustomersfilename())
+		db:=new(db.DBtype)
+		db.ImportCustomers(importfilename)
+	})
+	s.btnCustomersExport = widget.NewButton("Export Customers",func() {
+		exportfilename := s.app.Preferences().StringWithFallback("fileCustomers",Getcustomersfilename())
+		db:=new(db.DBtype)
+		db.ExportCustomers(exportfilename)
+		})
+	s.fileCustomers = &widget.Label{Text: Getcustomersfilename()}
+
+	// Groups ImportExport
+	s.btnGroupsImport = widget.NewButton("Import Groups",func() {
+		fn := s.app.Preferences().StringWithFallback("fileGroups",Getgroupsfilename())
+		db:=new(db.DBtype)
+		db.ImportGroups(fn)
+	})
+	s.btnGroupsExport = widget.NewButton("Export Groups",func() {
+		fn := s.app.Preferences().StringWithFallback("fileGroups",Getgroupsfilename())
+		db:=new(db.DBtype)
+		db.ExportGroups(fn)
+	})
+	s.fileGroups = &widget.Label{Text: Getgroupsfilename()}
+
 	fileContainer := container.NewGridWithColumns(2,
-		NewBoldLabel("Customer Import/Export file"), s.fileCustomers,
-		NewBoldLabel("Groups Import/Export file"), s.fileGroups,
+		NewBoldLabel("Location of default datafiles and textfiles:"),
+			s.btnOpenDatadir,
+		container.NewGridWithColumns(3,s.btnCustomersExport,s.btnCustomersImport,NewBoldLabel("Customers filename:")), 
+			s.fileCustomers,
+		container.NewGridWithColumns(3,s.btnGroupsExport,s.btnGroupsImport,NewBoldLabel("Groups filename:")), 
+			 s.fileGroups,
 	)
 
 	return container.NewScroll(container.NewVBox(

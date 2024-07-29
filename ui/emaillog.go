@@ -3,12 +3,10 @@ package ui
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/db"
@@ -18,8 +16,6 @@ import (
 type theemaillog struct {
 	btnStart			*widget.Button
 	btnCheck			*widget.Button
-	btnImport 			*widget.Button
-	btnExport 			*widget.Button
 
 	useEmail	     	*widget.RadioGroup
 	emailServer  		*widget.Entry
@@ -98,7 +94,15 @@ func (s *theemaillog) buildLog() *container.Scroll {
 	s.btnCheck = &widget.Button{Text:"Check Email",OnTapped: func() {
 		d:=new(db.DBtype)
 		d.Opendb()
-		p,_:=d.DecryptPassword(s.app.Preferences().StringWithFallback("ePassword",""))
+		var hash,p string
+		hash, err =d.MakeHash()
+		if err!=nil {
+			log.Println("buildLog MakeHash error ",err.Error())
+		}
+		p,err=db.DecryptPassword(s.app.Preferences().StringWithFallback("ePassword",""),hash)
+		if err!=nil {
+			log.Println("buildLog Decryprpassword error ",err.Error())
+		}
 		e:=new(pfemail.Etype)
 		e.SetupEmail(s.app.Preferences().StringWithFallback("eServer",""),
 		s.app.Preferences().StringWithFallback("eUser",""),p,
@@ -119,7 +123,13 @@ func (s *theemaillog) buildLog() *container.Scroll {
 	s.btnStart = &widget.Button{Text:"Start Email",OnTapped: func() {
 		d:=new(db.DBtype)
 		d.Opendb()
-		p,_:=d.DecryptPassword(s.app.Preferences().StringWithFallback("ePassword",""))
+		var hash string
+		var p string
+		hash , err = d.MakeHash()
+		if err!=nil {
+			log.Println("buildLog MakeHash error ",err.Error())
+		}
+		p,err=db.DecryptPassword(s.app.Preferences().StringWithFallback("ePassword",""),hash)
 		e:=new(pfemail.Etype)
 		e.SetupEmail(s.app.Preferences().StringWithFallback("eServer",""),
 		s.app.Preferences().StringWithFallback("eUser",""),p,
@@ -134,37 +144,11 @@ func (s *theemaillog) buildLog() *container.Scroll {
 			Appendtotextfile("emaillog.txt",fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05"),"No mail..."))
 		}
 	}}
-	s.btnImport = widget.NewButton("Import customers",func() {
-		var importfilename string
-		dialog.ShowFileOpen(func (f fyne.URIReadCloser,err error) {
-			if err==nil && f!=nil {
-				importfilename=f.URI().String()
-				importfilename = strings.Replace(importfilename,"file://","",-1)
-				if importfilename>"" {
-					db:=new(db.DBtype)
-					db.ImportCustomers(importfilename)
-				}
-			}
-		},s.window)		
-	})
-	s.btnExport = widget.NewButton("Export customers",func() {
-		var exportfilename string
-		dialog.ShowFileSave(func (f fyne.URIWriteCloser,err error) {
-			if err==nil && f!=nil {
-				exportfilename=f.URI().String()
-				exportfilename = strings.Replace(exportfilename,"file://","",-1)
-				if exportfilename>"" {
-					db:=new(db.DBtype)
-					db.ExportCustomers(exportfilename)
-				}
-			}
-		},s.window)
-	})
 
 	return container.NewScroll(		
 		container.NewVBox(
 			&widget.Card{Title: "Email Settings", Content: emailContainer},
-			container.NewHBox(s.btnCheck,s.btnStart,s.btnImport,s.btnExport),
+			container.NewHBox(s.btnCheck,s.btnStart),
 			s.logtext,
 	))
 }
@@ -197,16 +181,28 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 		prefPassword:= s.app.Preferences().StringWithFallback("ePassword","")
 		d:=new(db.DBtype)
 		d.Opendb()
-		realPassword,err:=d.DecryptPassword(prefPassword)
+		var hash,realPassword string
+		var err error
+		hash,err =d.MakeHash()
 		if err!=nil {
-			log.Println("getPassword DecryptPassword error")
+			log.Println("buildLog onUseEmailChanged MakeHash error ",err.Error())
+		}
+		realPassword,err=db.DecryptPassword(prefPassword,hash)
+		if err!=nil {
+			log.Println("getPassword onEmailChanged DecryptPassword error")
 		}
 		return realPassword
 	}
 	func (s *theemaillog) setPassword(realPassword string) error {
 		d:=new(db.DBtype)
 		d.Opendb()
-		prefPassword,err:=d.EncryptPassword(realPassword)
+		var hash,prefPassword string
+		var err error
+		hash,err =d.MakeHash()
+		if err!=nil {
+			log.Println("buildLog setPassord MakeHash error ",err.Error())
+		}
+		prefPassword,err=db.EncryptPassword(realPassword,hash)
 		if err!=nil {
 			log.Println("setPassWord EncryptPassword error")
 		}

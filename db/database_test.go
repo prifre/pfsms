@@ -11,6 +11,7 @@ func TestDatabase(t *testing.T) {
 	d:=new(DBtype)
 	d.Opendb()
 	d.Setupdb()
+	d.Closedatabase()
 }
 
 func TestImportdata(t *testing.T) {

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -76,8 +77,12 @@ func (s *theform) HandleSendsms(p,t,m string) {
 	var sms ariasms.SMStype =*new(ariasms.SMStype)
 	sms.Comport = s.app.Preferences().StringWithFallback("mobilePort", "COM2")
 	sms.Addhash=s.app.Preferences().Bool("addHash")
-	sms.SendMessage(p1,m)
-	for i:=0;i<len(p1);i++ {
-		Appendtotextfile("smslog.txt",fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05")," Sent "+s.message.Text+" to "+p1[i]))
+	err := sms.SendMessage(p1,m)
+	if err!=nil {
+		log.Println("Failed to send messages ",err.Error())
+	} else {
+		for i:=0;i<len(p1);i++ {
+			log.Println("smslog.txt",fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05")," Sent "+s.message.Text+" to "+p1[i]))
+		}	
 	}
 }
