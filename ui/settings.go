@@ -103,6 +103,9 @@ func (s *settings) buildUI() *container.Scroll {
 		importfilename := s.app.Preferences().StringWithFallback("fileCustomers",Getcustomersfilename())
 		db:=new(db.DBtype)
 		db.ImportCustomers(importfilename)
+		s.window.SetContent(Create(s.app, s.window))
+		// t.tableShowCustomers=t.listCustomers()
+		// t.tableShowCustomers.Refresh()
 	})
 	s.btnCustomersExport = widget.NewButton("Export Customers",func() {
 		exportfilename := s.app.Preferences().StringWithFallback("fileCustomers",Getcustomersfilename())
@@ -116,6 +119,7 @@ func (s *settings) buildUI() *container.Scroll {
 		fn := s.app.Preferences().StringWithFallback("fileGroups",Getgroupsfilename())
 		db:=new(db.DBtype)
 		db.ImportGroups(fn)
+		s.window.SetContent(Create(s.app, s.window))
 	})
 	s.btnGroupsExport = widget.NewButton("Export Groups",func() {
 		fn := s.app.Preferences().StringWithFallback("fileGroups",Getgroupsfilename())
@@ -125,14 +129,10 @@ func (s *settings) buildUI() *container.Scroll {
 	s.fileGroups = &widget.Label{Text: Getgroupsfilename()}
 
 	fileContainer := container.NewGridWithColumns(2,
-		NewBoldLabel("Location of default datafiles and textfiles:"),
-			s.btnOpenDatadir,
-		container.NewGridWithColumns(3,s.btnCustomersExport,s.btnCustomersImport,NewBoldLabel("Customers filename:")), 
-			s.fileCustomers,
-		container.NewGridWithColumns(3,s.btnGroupsExport,s.btnGroupsImport,NewBoldLabel("Groups filename:")), 
-			 s.fileGroups,
+		NewBoldLabel("Location of default datafiles and textfiles:"),s.btnOpenDatadir,
+		container.NewGridWithColumns(2,s.btnCustomersExport,s.btnCustomersImport),s.fileCustomers,
+		container.NewGridWithColumns(2,s.btnGroupsExport,s.btnGroupsImport), s.fileGroups,
 	)
-
 	return container.NewScroll(container.NewVBox(
 		&widget.Card{Title: "Mobile Settings", Content: mobileContainer},
 		&widget.Card{Title: "File Settings", Content: fileContainer},

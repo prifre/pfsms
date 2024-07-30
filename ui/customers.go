@@ -29,7 +29,6 @@ func NewTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 }
 func (s *thetable) listCustomers() *widget.Table {
 	d:=new(db.DBtype)
-	d.Opendb()
 	dataCustomers,err:=d.ShowCustomers(0,10000)
 	if err!=nil {
 		fmt.Printf("ShowCustomer failed %s",err.Error())
@@ -53,7 +52,6 @@ func (s *thetable) listCustomers() *widget.Table {
 	listCustomers.SetColumnWidth(0,20)
 	listCustomers.SetRowHeight(0,20)
 	listCustomers.BaseWidget.Resize(fyne.NewSize(1000,1000))
-	d.Closedatabase()
 	return listCustomers
 }
 func (s *thetable) buildTableCustomers() *container.Scroll {
@@ -88,6 +86,7 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 	s.tableShowGroups = listGroups
 	return container.NewScroll(listGroups)
 }
+
 func (s *thetable) buildTable() *container.Scroll {
 	gr:=container.NewGridWithColumns(2,
 			s.buildTableCustomers().Content,

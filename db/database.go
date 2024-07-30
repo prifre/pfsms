@@ -82,8 +82,12 @@ func (db *DBtype) Setupdb() error {
 }
 func (db *DBtype) Closedatabase() error {
 	var err error
-	db.conn.Close()
-	db.conn = nil
+	if db.conn!=nil {
+		err = db.conn.Close()
+		db.conn = nil
+	} else {
+		log.Println("Closedatabase error. Closed already!")
+	}
 	return err
 }
 func (db *DBtype) Createtables() error {
@@ -221,23 +225,22 @@ func (db *DBtype) DeleteMessage(id int) error {
 func (db *DBtype) ShowCustomers(from int,to int) ([][]string,error) {
 	var data [][]string
 	var err error
-	var id int
 	var phone,firstname,lastname string
 	db.Opendb()
 	// r,_:=db.conn.Exec("SELECT COUNT(*) FROM tblCustomers")
 	// fmt.Println(r)
-	sq:=fmt.Sprintf("SELECT id,phone,firstname,lastname FROM tblCustomers WHERE id>%d AND id<=%d",from,to)
+	sq:=fmt.Sprintf("SELECT phone,firstname,lastname FROM tblCustomers WHERE id>%d AND id<=%d",from,to)
 	rows, err := db.conn.Query(sq)
 	if err != nil {
 		fmt.Println("#2 ShowCustomers Query error:", err.Error())
 		return nil, err
 	}
-	if !rows.Next() {
-		return nil,err
-	}
 	for rows.Next() {
-		err = rows.Scan(&id,&phone,&firstname,&lastname)
-		data=append(data,[]string{fmt.Sprintf("%d: %s   %s %s",id,phone,firstname,lastname)})
+		err = rows.Scan(&phone,&firstname,&lastname)
+		if len(phone)<20 {
+			phone=strings.Repeat(" ",20-len(phone))+phone
+		}
+		data=append(data,[]string{fmt.Sprintf("%s\t%s %s",phone,firstname,lastname)})
 	}
 	db.Closedatabase()
 	return data, err
@@ -246,17 +249,16 @@ func (db *DBtype) ShowGroupnames() ([][]string,error) {
 	// should show all available groupnames
 	var data [][]string
 	var err error
-	var id int
 	var groupname string
 	db.Opendb()
 	sq:="SELECT DISTINCT groupname FROM tblGroups ORDER BY groupname ASC"
 	rows, err := db.conn.Query(sq)
 	if err != nil {
-		fmt.Println("#2 ShowGropupnames Query error:", err.Error())
+		fmt.Println("#2 ShowGropnames Query error:", err.Error())
 		return nil, err
 	}
 	for rows.Next() {
-		err = rows.Scan(&id,&groupname)
+		err = rows.Scan(&groupname)
 		data=append(data,[]string{groupname})
 	}
 	db.Closedatabase()
@@ -267,6 +269,7 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 	var err error
 	var b0 []byte
 	var sq,phone,firstname,lastname,note string
+	var cnt string
     b0, err = os.ReadFile(frfile) // SQL to make tables!
     if err != nil {
         log.Println("#1 ImportCustomers", err.Error())
@@ -305,18 +308,18 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 		if len(b2)>3 {
 			note = b2[3]
 		}
-		var cnt string
+		if len(phone)<5 {
+			continue
+		}
 		r, err := db.conn.Query("SELECT COUNT(*) AS cnt FROM tblCustomers WHERE phone = '"+phone+"'")
-		if err==nil {
+		if err!=nil {
+			log.Println("#2 ImportCustomers Query failed: ", sq, " ", err.Error())
+		} else {
 			for r.Next() {
-				err = r.Scan(&cnt)
-				if err!=nil {
-					log.Println("#1 ImportCustomers Error Scan)",err.Error())
-				}
-				fmt.Println(cnt)
+				r.Scan(&cnt)
 			}
 		}
-			if r.Next() {
+		if cnt>"0" {
 			continue
 		}
 		sq ="INSERT INTO tblCustomers (phone,firstname,lastname,note)"
@@ -344,30 +347,27 @@ func (db *DBtype) ExportCustomers(tofile string) error {
 	if err != nil {
 		log.Println("#1 ExportCustomers ", err.Error())
 	}
-	if !rows.Next() {
+	for rows.Next() {
+		err = rows.Scan(&phone,&firstname,&lastname,&note)
+		if err!=nil {
+			log.Println("#2 ExpotCustomers error,",err.Error())
+		}
+		if len(phone)>0 {
+			txt +=fmt.Sprintf("%s\t%s\t%s\t%s\r\n",phone,firstname,lastname,note)
+		}
+	}
+	db.Closedatabase()
+	if txt=="" {
 		// export sample data!!!
 		txt ="+46736290839\tPeter\tFreund\r\n"
 		txt +="087543169\tLin\tZhang\r\n"
 		txt +="04690510\tFröken\tUr\tClock\r\n"
 		txt +="+12024561111\tWhite\tHouse\tin USA\r\n"
-	} else {
-		for rows.Next() {
-			err = rows.Scan(&phone,&firstname,&lastname,&note)
-			if err!=nil {
-				log.Println("#2 ExpotCustomers error,",err.Error())
-			}
-			txt +=fmt.Sprintf("%s\t%s\t%s\t%s\r\n",phone,firstname,lastname,note)
-		}
 	}
-	f, err := os.OpenFile(tofile, os.O_CREATE|os.O_WRONLY, 0644)
+	err = os.WriteFile(tofile, []byte(txt), 0644)
 	if err != nil {
-		log.Println("#3 ExpotCustomers error,",err.Error())
+		log.Println("#3 ExportCustomers error,",err.Error())
 	}
-	defer f.Close()
-	if _, err := f.WriteString(txt); err != nil {
-		log.Println("#4 ExpotCustomers error,",err.Error())
-	}
-	db.Closedatabase()
 	return err
 }
 func (db *DBtype) ImportGroups(frfile string) error {
@@ -375,6 +375,7 @@ func (db *DBtype) ImportGroups(frfile string) error {
 	var err error
 	var b0 []byte
 	var sq string
+	var cnt string
     b0, err = os.ReadFile(frfile) // SQL to make tables!
     if err != nil {
         log.Println("#1 ImportGroups", err.Error())
@@ -385,8 +386,22 @@ func (db *DBtype) ImportGroups(frfile string) error {
 	for i:=0;i<len(strings.Split(b,"\r"));i++ {
 		b1:=strings.Split(b,"\r")[i]
 		b2:=strings.Split(b1,"\t")
+		if len(b2)<2 {
+			continue
+		}
+		sq="SELECT COUNT(*) AS cnt FROM tblGroups WHERE "
+		sq =fmt.Sprintf("%sgroupname='%s' AND phone='%s'",sq,b2[0],b2[1])
+		r, err := db.conn.Query(sq)
+		if err==nil {
+			for r.Next() {
+				r.Scan(&cnt)
+			}
+		}
+		if cnt>"0" {
+			continue
+		}
 		sq ="INSERT INTO tblGroups (groupname,phone)"
-		sq = fmt.Sprintf("%s VALUES (\"%s\",\"%s\")",sq,b2[0],b2[1])
+		sq = fmt.Sprintf("%s VALUES ('%s','%s')",sq,b2[0],b2[1])
 		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 		if err != nil {
 			log.Println("#2 ImportGroups prepare", err.Error())
@@ -410,30 +425,27 @@ func (db *DBtype) ExportGroups(tofile string) error {
 	if err != nil {
 		log.Println("#1 ExportGroups ", err.Error())
 	}
-	if !rows.Next() {
+	for rows.Next() {
+		err = rows.Scan(&groupname,&phone)
+		if err!=nil {
+			log.Println("#2 ExpotGroups error,",err.Error())
+		}
+		if len(phone)>0 {
+			txt +=fmt.Sprintf("%s\t%s\r\n",groupname,phone)
+		}
+	}
+	db.Closedatabase()
+	if txt=="" {
 		// export sample data!!!
 		txt ="Sample\t0046736290839\r\n"
 		txt +="Sample\t004687543169\r\n"
 		txt +="Sample\t04690510\r\n"
 		txt +="Sample\t0012024561111\r\n"
-	} else {
-		for rows.Next() {
-			err = rows.Scan(&groupname,&phone)
-			if err!=nil {
-				log.Println("#2 ExpotGroups error,",err.Error())
-			}
-			txt +=fmt.Sprintf("%s\t%s\r\n",groupname,phone)
-		}
 	}
-	f, err := os.OpenFile(tofile, os.O_CREATE|os.O_WRONLY, 0644)
+	err = os.WriteFile(tofile, []byte(txt), 0644)
 	if err != nil {
-		log.Println("#4 ExpotGroups error,",err.Error())
+		log.Println("#3 ExportGroups error,",err.Error())
 	}
-	defer f.Close()
-	if _, err := f.WriteString(txt); err != nil {
-		log.Println("#4 ExpotGroups error,",err.Error())
-	}
-	db.Closedatabase()
 	return err
 }
 func Fixphonenumber(pn string,cc string) string {
