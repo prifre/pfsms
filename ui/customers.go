@@ -28,7 +28,7 @@ func NewTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
 	return &thetable{app: a, window: w,  appTable: at}
 }
 func (s *thetable) listCustomers() *widget.Table {
-	d:=new(db.DBtype)
+	d:=new(pfdatabase.DBtype)
 	dataCustomers,err:=d.ShowCustomers(0,10000)
 	if err!=nil {
 		fmt.Printf("ShowCustomer failed %s",err.Error())
@@ -61,7 +61,7 @@ func (s *thetable) buildTableCustomers() *container.Scroll {
 }
 func (s *thetable) buildTableGroups() *container.Scroll {
 	//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
-	d:=new(db.DBtype)
+	d:=new(pfdatabase.DBtype)
 	d.Opendb()
 	dataGroups,err:=d.ShowGroupnames()
 	if err!=nil {
@@ -86,7 +86,6 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 	s.tableShowGroups = listGroups
 	return container.NewScroll(listGroups)
 }
-
 func (s *thetable) buildTable() *container.Scroll {
 	gr:=container.NewGridWithColumns(2,
 			s.buildTableCustomers().Content,
@@ -98,7 +97,6 @@ func (s *thetable) buildTable() *container.Scroll {
 	bigContainer:=container.NewScroll(gr)
 return bigContainer
 }
-
 func (s *thetable) tabItem() *container.TabItem {
 	return &container.TabItem{Text: "Customers", Icon: theme.StorageIcon(), Content: s.buildTable()}
 }

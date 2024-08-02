@@ -36,12 +36,12 @@ func (e *Etype) Login() error {
 	var hash string
 	var err error
 	if e.pword=="" {
-		hash, err =db.MakeHash()
+		hash, err =pfdatabase.MakeHash()
 		if err!=nil {
 			log.Println("buildLog MakeHash error ",err.Error())
 		}
 		passwdstring:=fyne.CurrentApp().Preferences().StringWithFallback("ePassword","")
-		e.pword,err=db.DecryptPassword(passwdstring,hash)
+		e.pword,err=pfdatabase.DecryptPassword(passwdstring,hash)
 		if err!=nil {
 			log.Println("Decryptpassword error ",err.Error())
 		}
@@ -67,7 +67,6 @@ func (e *Etype) Login() error {
 	log.Println("Logged in")
 	return err
 }
-
 func (e *Etype) ListMailboxes () []string {
 	var mb []string
 	// List mailboxes
@@ -146,7 +145,6 @@ func (e *Etype) Getallsmsmail() []*imap.Message {
 	e.c.Logout()
 	return imsgs
 }
-
 func (e *Etype) Moveallsmsmail() error {
 	// Select INBOX
 	e.Login()

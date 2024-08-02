@@ -88,9 +88,9 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.emailPLabel, s.emailPassword,
 		s.emailFLabel,s.emailFrequency,
 	)
-	s.logtext =NewBoldLabel("")
+	s.logtext =&widget.Label{}
 	var txt string
-	txt,err = ReadLastLineWithSeek("emaillog.txt",10)
+	txt,err = ReadLastLineWithSeek("emaillog.txt",18)
 	if err!=nil {
 		log.Println("#1 buildLog!", err.Error())
 	}
@@ -104,7 +104,7 @@ func (s *theemaillog) buildLog() *container.Scroll {
 			Appendtotextfile("emaillog.txt","Email check ok.\r\n")
 		}
 		var m string
-		m,err = ReadLastLineWithSeek("emaillog.txt",10)
+		m,err = ReadLastLineWithSeek("emaillog.txt",18)
 		if err!=nil {
 			log.Println("#1 buildLog!", err.Error())
 		}
@@ -135,7 +135,7 @@ func (s *theemaillog) buildLog() *container.Scroll {
 			Appendtotextfile("emaillog.txt","Moved SMS mail to sms folder.\r\n")
 		}
 		var m string
-		m,err = ReadLastLineWithSeek("emaillog.txt",10)
+		m,err = ReadLastLineWithSeek("emaillog.txt",18)
 		if err!=nil {
 			log.Println("#2 buildLog!", err.Error())
 		}
@@ -172,11 +172,11 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 		prefPassword:= s.app.Preferences().StringWithFallback("ePassword","")
 		var hash,realPassword string
 		var err error
-		hash,err =db.MakeHash()
+		hash,err =pfdatabase.MakeHash()
 		if err!=nil {
 			log.Println("buildLog onUseEmailChanged MakeHash error ",err.Error())
 		}
-		realPassword,err=db.DecryptPassword(prefPassword,hash)
+		realPassword,err=pfdatabase.DecryptPassword(prefPassword,hash)
 		if err!=nil {
 			log.Println("getPassword onEmailChanged DecryptPassword error")
 		}
@@ -185,11 +185,11 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 	func (s *theemaillog) setPassword(realPassword string) error {
 		var hash,prefPassword string
 		var err error
-		hash,err =db.MakeHash()
+		hash,err =pfdatabase.MakeHash()
 		if err!=nil {
 			log.Println("buildLog setPassord MakeHash error ",err.Error())
 		}
-		prefPassword,err=db.EncryptPassword(realPassword,hash)
+		prefPassword,err=pfdatabase.EncryptPassword(realPassword,hash)
 		if err!=nil {
 			log.Println("setPassWord EncryptPassword error")
 		}

@@ -1,4 +1,4 @@
-package db
+package pfdatabase
 
 import (
 	"fmt"

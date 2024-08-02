@@ -369,7 +369,7 @@ func Setuplog() {
 			// other error
 		}
 	}
-	f, err := os.OpenFile( fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"smslog.txt"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile( fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"pfsmslog.txt"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}

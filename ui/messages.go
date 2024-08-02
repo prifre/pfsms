@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/ariasms"
+	"github.com/prifre/pfsms/pfdatabase"
 )
 
 type theform struct {
@@ -53,9 +54,9 @@ func (s *theform) buildForm() *container.Scroll {
 		// sms.SendMessage([]string{s.phone.Text},s.message.Text)		
 	info:="To use multiple mobile numbers, separate them with commas or Enter.\r\n"
 	info +="To insert firstname and/or lastname, use <<Fname>> and <<Lname>> in message"
-	s.logtext=&widget.Label{Text: " "}
+	s.logtext=&widget.Label{}
 	var txt string
-	txt,err = ReadLastLineWithSeek("smslog.txt",10)
+	txt,err = ReadLastLineWithSeek("smslog.txt",12)
 	if err!=nil {
 		log.Println("#1 buildLog!", err.Error())
 	}
@@ -87,6 +88,11 @@ func (s *theform) HandleSendsms(p,t,m string) {
 	countrycode := s.app.Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
 	for i:=0;i<len(p1);i++ {
 		p1[i]=Fixphonenumber(p1[i],countrycode)
+		if strings.Contains(m,"<<Fname>>") || strings.Contains(m,"<<Lname>>") {
+			fname:=pfdatabase.GetFname(p1[i])
+			lname:=pfdatabase.GetLname(p1[i])
+			p1[i]=p1[i] + "\t" + fname + "\"t" +lname
+		}
 	}
 	var sms ariasms.SMStype =*new(ariasms.SMStype)
 	sms.Comport = s.app.Preferences().StringWithFallback("mobilePort", "COM2")
@@ -100,7 +106,7 @@ func (s *theform) HandleSendsms(p,t,m string) {
 		}
 	}
 	var txt string
-	txt,err = ReadLastLineWithSeek("smslog.txt",10)
+	txt,err = ReadLastLineWithSeek("smslog.txt",12)
 	if err!=nil {
 		log.Println("#1 buildLog!", err.Error())
 	}

@@ -1,4 +1,4 @@
-package db
+package pfdatabase
 
 import (
 	"database/sql"
@@ -298,6 +298,8 @@ func (db *DBtype) ImportCustomers(frfile string) error {
 		phone=""
 		if len(b2)>0 {
 			phone = Fixphonenumber(b2[0],cci)
+		} else {
+			continue
 		}
 		if len(b2)>1 {
 			firstname = b2[1]
@@ -452,9 +454,6 @@ func Fixphonenumber(pn string,cc string) string {
 	// pn phonenumber  cc coutrycode
 	// Sweden (+46) converts to 0046
 	var cci string ="00"
-	if len(pn)<5 {
-		return ""
-	}
 	for i:=0;i<len(cc);i++ {
 		if strings.Index("0123456789",string(cc[i]))>0 {
 			cci +=string(cc[i])
@@ -470,4 +469,44 @@ func Fixphonenumber(pn string,cc string) string {
 		return "00"+pn[1:]
 	}
 	return cci+pn
+}
+func (db *DBtype) GetFname(phone string) string {
+	var firstname string
+	db.Opendb()
+	rows, err := db.conn.Query("SELECT firstname FROM tblCustomers WHERE phone = '"+phone+"'")
+	if err != nil {
+		return ""
+	}
+	if err != nil {
+		fmt.Println("#2 ShowCustomers Query error:", err.Error())
+		return ""
+	}
+	for rows.Next() {
+		err = rows.Scan(&firstname)
+		if err!=nil {
+			log.Println("rows.Scan failed in GetFname")
+		}
+	}
+	db.Closedatabase()
+	return firstname
+}
+func (db *DBtype) GetLname(phone string) string {
+	var lastname string
+	db.Opendb()
+	rows, err := db.conn.Query("SELECT lastname FROM tblCustomers WHERE phone = '"+phone+"'")
+	if err!=nil {
+		return ""
+	}
+	for rows.Next() {
+		if err != nil {
+			fmt.Println("#2 ShowCustomers Query error:", err.Error())
+			return ""
+		}
+		err = rows.Scan(&lastname)
+		if err!=nil {
+			log.Println("rows.Scan failed in GetFname")
+		}
+	}
+	db.Closedatabase()
+	return lastname
 }

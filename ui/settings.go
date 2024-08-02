@@ -101,7 +101,7 @@ func (s *settings) buildUI() *container.Scroll {
 	// Customers ImportExport
 	s.btnCustomersImport = widget.NewButton("Import Customers",func() {
 		importfilename := s.app.Preferences().StringWithFallback("fileCustomers",Getcustomersfilename())
-		db:=new(db.DBtype)
+		db:=new(pfdatabase.DBtype)
 		db.ImportCustomers(importfilename)
 		s.window.SetContent(Create(s.app, s.window))
 		// t.tableShowCustomers=t.listCustomers()
@@ -109,7 +109,7 @@ func (s *settings) buildUI() *container.Scroll {
 	})
 	s.btnCustomersExport = widget.NewButton("Export Customers",func() {
 		exportfilename := s.app.Preferences().StringWithFallback("fileCustomers",Getcustomersfilename())
-		db:=new(db.DBtype)
+		db:=new(pfdatabase.DBtype)
 		db.ExportCustomers(exportfilename)
 		})
 	s.fileCustomers = &widget.Label{Text: Getcustomersfilename()}
@@ -117,13 +117,13 @@ func (s *settings) buildUI() *container.Scroll {
 	// Groups ImportExport
 	s.btnGroupsImport = widget.NewButton("Import Groups",func() {
 		fn := s.app.Preferences().StringWithFallback("fileGroups",Getgroupsfilename())
-		db:=new(db.DBtype)
+		db:=new(pfdatabase.DBtype)
 		db.ImportGroups(fn)
 		s.window.SetContent(Create(s.app, s.window))
 	})
 	s.btnGroupsExport = widget.NewButton("Export Groups",func() {
 		fn := s.app.Preferences().StringWithFallback("fileGroups",Getgroupsfilename())
-		db:=new(db.DBtype)
+		db:=new(pfdatabase.DBtype)
 		db.ExportGroups(fn)
 	})
 	s.fileGroups = &widget.Label{Text: Getgroupsfilename()}
