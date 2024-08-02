@@ -35,8 +35,8 @@ func Appendtotextfile(fn string, m string) error {
 		}
 	}
 	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
-	m=strings.Replace(m,"\r","<CR>",-1)
-	m=strings.Replace(m,"\n","",-1)
+	// m=strings.Replace(m,"\r","<CR>",-1)
+	// m=strings.Replace(m,"\n","",-1)
 	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -46,6 +46,35 @@ func Appendtotextfile(fn string, m string) error {
 		log.Println(err)
 	}
 	return err
+}
+func Readtextfile(fn string) (string,error) {
+	var err error
+	var path string
+	path, err = os.UserHomeDir()
+	if err != nil {
+		panic("path")
+	}
+	path = fmt.Sprintf("%s%c%s",path,os.PathSeparator,"pfsms")
+	if _, err = os.Stat(path); err != nil {
+		log.Println("#1 Adding folder data: " + path)
+		if os.IsNotExist(err) {
+			err = os.Mkdir(path, 0755)
+			if err != nil {
+				panic(err.Error())
+			}
+			// file does not exist
+		} else {
+			panic(err.Error())
+			// other error
+		}
+	}
+	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
+	var b0 []byte
+	b0, err = os.ReadFile(fn) // SQL to make tables!
+	if err != nil {
+		fmt.Print(err)
+	}
+	return string(b0),err
 }
 func GetAllCountries() []string {
 // Countries taken from github.com/IftekherSunny/go_country and from
@@ -367,4 +396,65 @@ func Getgroupsfilename() string {
 	}
 	path = fmt.Sprintf("%s%c%s%c%s",path ,os.PathSeparator,"pfsms",os.PathSeparator,"groups.txt")
 	return path
+}
+func ReadLastLineWithSeek(fn string,cnt int) (string, error) {
+	var err error
+	var path string
+	path, err = os.UserHomeDir()
+	if err != nil {
+		panic("path")
+	}
+	path = fmt.Sprintf("%s%c%s",path,os.PathSeparator,"pfsms")
+	if _, err = os.Stat(path); err != nil {
+		log.Println("#1 Adding folder data: " + path)
+		if os.IsNotExist(err) {
+			err = os.Mkdir(path, 0755)
+			if err != nil {
+				panic(err.Error())
+			}
+			// file does not exist
+		} else {
+			panic(err.Error())
+			// other error
+		}
+	}
+	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
+    fileHandle, err := os.Open(fn)
+
+    if err != nil {
+        panic("Cannot open file")
+    }
+    defer fileHandle.Close()
+
+    line := ""
+    var cursor int64 = 0
+    stat, _ := fileHandle.Stat()
+    cursor = stat.Size()
+	linecount:=0
+    for { 
+        cursor --
+        fileHandle.Seek(cursor, io.SeekStart)
+
+        char := make([]byte, 1)
+        fileHandle.Read(char)
+
+        if  (char[0] == 10 || char[0] == 13) { // stop if we find a line
+			if len(line)>0 {
+				if !(line[0]==10 || line[0]==13) {
+					linecount ++
+					if linecount>=cnt {
+						break
+					}
+				}
+			} else {
+				linecount++
+			}
+        }
+        line = fmt.Sprintf("%s%s", string(char), line) // there is more efficient way
+        if cursor <= 0 { // stop if we are at the begining
+            break
+        }
+    }
+
+    return line,err
 }

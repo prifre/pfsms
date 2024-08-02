@@ -17,7 +17,7 @@ func getEmailPasswords() (u string,p string) {
 	if err!=nil {
 		panic("path")
 	}
-	path = fmt.Sprintf("%s%c%s%s%s",path ,os.PathSeparator, "pfsms",os.PathSeparator,"emailpasswords.txt")
+	path = fmt.Sprintf("%s%c%s%c%s",path ,os.PathSeparator, "pfsms",os.PathSeparator,"emailpasswords.txt")
     b0, err = os.ReadFile(path) // SQL to make tables!
     if err != nil {
         fmt.Print(err)
@@ -32,14 +32,15 @@ func TestGetallemailmovetosms(t *testing.T) {
 	imap.Verbose=true
 	e0.uname,e0.pword = getEmailPasswords()
 	e0.mserver = "mailcluster.loopia.se"
-	e0.mport = 993
-	e := e0.Getallmailmovetosmsfolder()
+	e0.mport = "993"
+	e0.Checkemaillogin()
+	e := e0.Getallsmsmail()
+	e0.Moveallsmsmail()
 	if e!=nil {
-		fmt.Println("UID:", e.UID)
-		fmt.Println("SUBJECT:", e.Subject)
-		fmt.Println("\r\n-------TEXT: ", strings.Replace(e.Text,"\r\n","",-1))
-		fmt.Println("\r\n-------HTML: ", strings.Replace(e.HTML,"\r\n","",-1))
-		fmt.Println("\r\nFlags: ", e.Flags)
+		fmt.Println("UID:", e[0].Envelope)
+		fmt.Println("SUBJECT:", e[0].Envelope.Subject)
+		fmt.Println("SENDER: ", e[0].Envelope.Sender)
+		fmt.Println("\r\nFlags: ", e[0].Flags)
 	}
 }
 func TestCheckemaillogin(t *testing.T) {
@@ -47,7 +48,7 @@ func TestCheckemaillogin(t *testing.T) {
 	imap.Verbose=true
 	e0.uname,e0.pword = getEmailPasswords()
 	e0.mserver = "mailcluster.loopia.se"
-	e0.mport = 993
+	e0.mport = "993"
 	err := e0.Checkemaillogin()
     if err != nil {
         t.Fail()

@@ -5,6 +5,7 @@ go 1.22.1
 require (
 	fyne.io/fyne/v2 v2.4.5
 	github.com/BrianLeishman/go-imap v0.1.5
+	github.com/emersion/go-imap v1.2.1
 	github.com/mattn/go-sqlite3 v1.14.22
 	go.bug.st/serial v1.6.2
 )
@@ -16,6 +17,7 @@ require (
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
 	github.com/fredbi/uri v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/fyne-io/gl-js v0.0.0-20220119005834-d2da28d9ccfe // indirect

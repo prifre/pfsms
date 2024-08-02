@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -89,55 +88,59 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.emailPLabel, s.emailPassword,
 		s.emailFLabel,s.emailFrequency,
 	)
-	s.logtext = &widget.Label{}
+	s.logtext =NewBoldLabel("")
+	var txt string
+	txt,err = ReadLastLineWithSeek("emaillog.txt",10)
+	if err!=nil {
+		log.Println("#1 buildLog!", err.Error())
+	}
+	s.logtext.Text=txt
 	s.btnCheck = &widget.Button{Text:"Check Email",OnTapped: func() {
-		var hash,p string
-		hash, err =db.MakeHash()
-		if err!=nil {
-			log.Println("buildLog MakeHash error ",err.Error())
-		}
-		p,err=db.DecryptPassword(s.app.Preferences().StringWithFallback("ePassword",""),hash)
-		if err!=nil {
-			log.Println("buildLog Decryprpassword error ",err.Error())
-		}
 		e:=new(pfemail.Etype)
-		e.SetupEmail(s.app.Preferences().StringWithFallback("eServer",""),
-		s.app.Preferences().StringWithFallback("eUser",""),p,
-		s.app.Preferences().StringWithFallback("ePort",""))
-		m:=fmt.Sprintf("\r\n%s %s %s",time.Now().Format("2006-01-02 15:04:05"),"Checking email...",s.app.Preferences().StringWithFallback("eUser",""))
-		Appendtotextfile("emaillog.txt",m)
-		err=e.Checkemaillogin()
+		err = e.Checkemaillogin()
 		if err!=nil {
-			m:="\r\nResult of email login check: %s"+err.Error()
-			Appendtotextfile("emaillog.txt",m)
+			Appendtotextfile("emaillog.txt","Email check failed.\r\n")
 		} else {
-			m:=fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05"),"Email check ok.")
-			Appendtotextfile("emaillog.txt",m)
+			Appendtotextfile("emaillog.txt","Email check ok.\r\n")
 		}
-		s.logtext.Text += m
+		var m string
+		m,err = ReadLastLineWithSeek("emaillog.txt",10)
+		if err!=nil {
+			log.Println("#1 buildLog!", err.Error())
+		}
+		s.logtext.Text = m
 		s.logtext.Refresh()
 	}}
 	s.btnStart = &widget.Button{Text:"Start Email",OnTapped: func() {
-		var hash string
-		var p string
-		hash , err = db.MakeHash()
-		if err!=nil {
-			log.Println("buildLog MakeHash error ",err.Error())
-		}
-		p,err=db.DecryptPassword(s.app.Preferences().StringWithFallback("ePassword",""),hash)
 		e:=new(pfemail.Etype)
-		e.SetupEmail(s.app.Preferences().StringWithFallback("eServer",""),
-		s.app.Preferences().StringWithFallback("eUser",""),p,
-		s.app.Preferences().StringWithFallback("ePort",""))
-		fmt.Println("START CHECKING EMAIL!!")
-		m:=fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05"),"Handling mail...")
-		Appendtotextfile("emaillog.txt",m)
-		et:=e.Getallmailmovetosmsfolder()
-		if et!=nil {
-			Appendtotextfile("emaillog.txt",fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05"),"Got Email!!!"))
-		} else {
-			Appendtotextfile("emaillog.txt",fmt.Sprintf("\r\n%s %s",time.Now().Format("2006-01-02 15:04:05"),"No mail..."))
+		Appendtotextfile("emaillog.txt","Handling mail...\r\n")
+		err = e.Login()
+		if err!=nil {
+			log.Println("Login failed!")
 		}
+		m0:=e.Getallsmsmail()
+		if m0!=nil {
+			Appendtotextfile("emaillog.txt","Got Email!!!\r\n")
+			m :=  "SUBJECT:"+ m0[0].Envelope.Subject
+			// m += "SENDER: "+ m0[0].Envelope.Sender.Address
+			// fmt.Println("\r\nFlags: ", m0[0].Flags)		} else {
+			Appendtotextfile("emaillog.txt",m+"\r\n")
+		} else {
+			Appendtotextfile("emaillog.txt","No mail...\r\n")
+		}
+		err = e.Moveallsmsmail()
+		if err!=nil {
+			Appendtotextfile("emaillog.txt","Move SMS Mail failed.\r\n")
+		} else {
+			Appendtotextfile("emaillog.txt","Moved SMS mail to sms folder.\r\n")
+		}
+		var m string
+		m,err = ReadLastLineWithSeek("emaillog.txt",10)
+		if err!=nil {
+			log.Println("#2 buildLog!", err.Error())
+		}
+		s.logtext.Text = m
+		s.logtext.Refresh()
 	}}
 
 	return container.NewScroll(		
@@ -150,13 +153,6 @@ func (s *theemaillog) buildLog() *container.Scroll {
 
 func (s *theemaillog) tabItem() *container.TabItem {
 	return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildLog()}
-}
-func (s *theemaillog) Addtolog (m string) {
-	s.logtext.SetText(fmt.Sprintf("%s%s",s.logtext.Text ,m ))
-	err :=Appendtotextfile("emaillog.txt",m)
-	if err!=nil {
-		fmt.Println("#1 Addtolog Appendtotextfile failed")
-	}
 }
 func (s *theemaillog) onUseEmailChanged(selected string) {
 	//	s.client.OverwriteExisting = selected == "On"
