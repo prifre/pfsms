@@ -374,7 +374,7 @@ func ReadLastLineWithSeek(fn string, cnt int) string {
 		if string(char)=="\r" {
 			lc++
 		}
-		if lc > cnt {
+		if lc >= cnt {
 			break
 		}
 		lines = fmt.Sprintf("%s%s", string(char), lines) // there is more efficient way

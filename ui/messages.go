@@ -8,8 +8,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/prifre/pfsms/ariasms"
 	"github.com/prifre/pfsms/pfdatabase"
+	"github.com/prifre/pfsms/pfmobile"
 )
 
 type theform struct {
@@ -24,13 +24,12 @@ type theform struct {
 	dataAllGroups  [][]string
 	logtext        *widget.Label
 	window         fyne.Window
-	app            fyne.App
 }
 
-func NewMessages(a fyne.App, w fyne.Window) *theform {
-	return &theform{app: a, window: w}
+func NewMessages( w fyne.Window) *theform {
+	return &theform{ window: w}
 }
-func (s *theform) buildForm() *container.Scroll {
+func (s *theform) buildUI() *container.Scroll {
 	s.groupname = &widget.Entry{}
 	s.groupname.Text = ""
 	s.phone = &widget.Entry{}
@@ -45,13 +44,15 @@ func (s *theform) buildForm() *container.Scroll {
 		s.HandleSendsms(s.phone.Text, s.groupname.Text, s.message.Text)
 	}}
 	s.dataAllGroups = new(pfdatabase.DBtype).ShowAllGroups()
-	s.groupSelect = &widget.Select{Options: new(pfdatabase.DBtype).ShowGroups(), OnChanged: func(v string) {
-		s.phone.Text = s.Getphonesforgroup(v)
-		s.groupname.Text = v
-		s.groupname.Refresh()
-		s.phone.Refresh()
-	}}
-	s.groupSelect.Resize(fyne.NewSize(600, s.groupSelect.MinSize().Height))
+	s.groupSelect = &widget.Select{Options: new(pfdatabase.DBtype).ShowGroups(),
+		Selected: "",
+		 OnChanged: func(v string) {
+			s.phone.Text = s.Getphonesforgroup(v)
+			s.groupname.Text = v
+			s.groupname.Refresh()
+			s.phone.Refresh()
+		},
+	}
 	s.btnSaveGroup = &widget.Button{Text: "Save Group", OnTapped: func() {
 		// whe4n pasting, ensure so onlyu "0123456789+, " survives...
 		if len(s.phone.Text) < 5 {
@@ -87,11 +88,10 @@ func (s *theform) buildForm() *container.Scroll {
 		new(pfdatabase.DBtype).DeleteGroup(s.groupSelect.Selected)
 		s.dataAllGroups = new(pfdatabase.DBtype).ShowAllGroups()
 		s.groupSelect.Options = new(pfdatabase.DBtype).ShowGroups()
-		s.groupSelect.SetSelected("")
+		s.groupSelect.Selected = ""
 		s.groupSelect.Refresh()
 		s.groupname.SetText("")
-		s.phone.Text = s.Getphonesforgroup(s.groupSelect.Selected)
-		s.phone.Refresh()
+		s.groupname.Refresh()
 	}}
 	GroupsInfo := "To use multiple mobile numbers, separate them with commas or Enter.\r\n"
 	GroupsInfo += "Click Save Group to reuse in future."
@@ -99,7 +99,7 @@ func (s *theform) buildForm() *container.Scroll {
 	s.form = &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
 			{Text:"", Widget: NewBoldLabel(GroupsInfo)},
-			{Text: "Groups", Widget: container.NewHBox(s.groupSelect, s.btnSaveGroup, s.btnDeleteGroup)},
+			{Text: "Groups", Widget: container.NewGridWithColumns(3,s.groupSelect, s.btnSaveGroup, s.btnDeleteGroup)},
 			{Text: "Groupname", Widget: s.groupname},
 			{Text: "Phone", Widget: s.phone},
 			{Text: "",Widget: NewBoldLabel(MessageInfo)},
@@ -114,9 +114,6 @@ func (s *theform) buildForm() *container.Scroll {
 			s.form,
 			s.logtext,
 		))
-}
-func (s *theform) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Messages", Icon: theme.MailSendIcon(), Content: s.buildForm()}
 }
 func (s *theform) Getphonesforgroup(v string) string {
 	var np string
@@ -146,7 +143,7 @@ func (s *theform) HandleSendsms(p, t, m string) {
 		}
 	}
 	p1 := strings.Split(ph2, ",")
-	countrycode := s.app.Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
+	countrycode := fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
 	for i := 0; i < len(p1); i++ {
 		p1[i] = Fixphonenumber(p1[i], countrycode)
 		if strings.Contains(m, "<<Fname>>") || strings.Contains(m, "<<Lname>>") {
@@ -154,7 +151,7 @@ func (s *theform) HandleSendsms(p, t, m string) {
 			p1[i] = p1[i] + "\t" + db.GetFname(p1[i]) + "\t" + db.GetLname(p1[i])
 		}
 	}
-	result := new(ariasms.SMStype).SendMessage(p1, m)
+	result := new(pfmobile.SMStype).SendMessage(p1, m)
 	if result != nil {
 		log.Println("Sent messages ok")
 		var sh [][]string
@@ -166,4 +163,7 @@ func (s *theform) HandleSendsms(p, t, m string) {
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 12)
 		s.logtext.Refresh()
 	}
+}
+func (s *theform) tabItem() *container.TabItem {
+	return &container.TabItem{Text: "Messages", Icon: theme.MailSendIcon(), Content: s.buildUI()}
 }

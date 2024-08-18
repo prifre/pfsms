@@ -1,6 +1,8 @@
+Website = "https://sms.prifre.com"
+
 [Details]
 Name = "pfsms"
-ID = "pfsms.github.prifre"
+ID = "pfsms"
 Icon = "ui/pfsms.png"
 Version = "v0.1.0"
 Build = 1

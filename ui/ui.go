@@ -7,15 +7,31 @@ import (
 )
 
 // Create will stitch together all ui components
-func Create(app fyne.App, window fyne.Window) *container.AppTabs {
-	app.Settings().SetTheme(theme.DefaultTheme())
+func Create(window fyne.Window) *container.AppTabs {
+	fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
 	Setupfiles()
 	var tabs []*container.TabItem =  []*container.TabItem{
-		NewTable(app,window,&AppTable{}).tabItem(),
-		NewMessages(app,window).tabItem(),
-		NewEmaillog(app,window).tabItem(),
-		NewSettings(app, window).tabItem(),
-		NewAbout(app,window).tabItem(),
+		NewTable(window).tabItem(),
+		NewMessages(window).tabItem(),
+		NewEmail(window).tabItem(),
+		NewSettings(window).tabItem(),
+		NewAbout(window).tabItem(),
 	}
-	return &container.AppTabs{Items:tabs}
+	at :=container.AppTabs{Items:tabs}
+	at.OnSelected = func(t *container.TabItem) {
+		switch t.Text {
+		case "Customers":
+			tabs[0]=NewTable(window).tabItem()
+		case "Messages":
+			tabs[1]=NewMessages(window).tabItem()
+		case "Email":
+			tabs[2]=NewEmail(window).tabItem()
+		case "Settings":
+			tabs[3]=NewSettings(window).tabItem()
+		case "About pfsms":
+			tabs[4]=NewAbout(window).tabItem()
+		default:
+		}
+	}
+	return &at
 }

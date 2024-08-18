@@ -12,7 +12,7 @@ import (
 	"github.com/prifre/pfsms/pfemail"
 )
 
-type theemaillog struct {
+type theemail struct {
 	btnStart			*widget.Button
 	btnCheck			*widget.Button
 
@@ -30,21 +30,20 @@ type theemaillog struct {
 
 	logtext				*widget.Label
 	window      		fyne.Window
-	app         		fyne.App
 }
 
-func NewEmaillog(a fyne.App, w fyne.Window) *theemaillog {
-	return &theemaillog{app: a, window: w}
+func NewEmail( w fyne.Window) *theemail {
+	return &theemail{ window: w}
 }
-func (s *theemaillog) buildLog() *container.Scroll {
+func (s *theemail) buildUI() *container.Scroll {
 	var err error
 
 	s.emailSLabel = &widget.Label{Text: "Email Server", TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailServer = &widget.Entry{Text:s.app.Preferences().StringWithFallback("eServer",""),OnChanged: func(v string) {
-		s.app.Preferences().SetString("eServer",s.emailServer.Text)
+	s.emailServer = &widget.Entry{Text:fyne.CurrentApp().Preferences().StringWithFallback("eServer",""),OnChanged: func(v string) {
+		fyne.CurrentApp().Preferences().SetString("eServer",s.emailServer.Text)
 	}}
 	s.emailPortLabel = &widget.Label{Text: "Email Server Port", TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailPort = &widget.Entry{Text:s.app.Preferences().StringWithFallback("ePort","993"),OnChanged: func(v string) {
+	s.emailPort = &widget.Entry{Text:fyne.CurrentApp().Preferences().StringWithFallback("ePort","993"),OnChanged: func(v string) {
 		v0:=""
 		for i:=0;i<len(v);i++ {
 
@@ -53,11 +52,11 @@ func (s *theemaillog) buildLog() *container.Scroll {
 			}	
 		}
 		s.emailPort.SetText(v0)
-		s.app.Preferences().SetString("ePort",s.emailPort.Text)
+		fyne.CurrentApp().Preferences().SetString("ePort",s.emailPort.Text)
 	}}
 	s.emailULabel = &widget.Label{Text: "Email User", TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailUser = &widget.Entry{Text:s.app.Preferences().StringWithFallback("eUser",""),OnChanged: func(v string) {
-		s.app.Preferences().SetString("eUser",s.emailUser.Text)
+	s.emailUser = &widget.Entry{Text:fyne.CurrentApp().Preferences().StringWithFallback("eUser",""),OnChanged: func(v string) {
+		fyne.CurrentApp().Preferences().SetString("eUser",s.emailUser.Text)
 	}}
 	s.emailPLabel = &widget.Label{Text: "Email Password", TextStyle: fyne.TextStyle{Bold: true}}
 	p:=s.getPassword()
@@ -65,20 +64,20 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.setPassword(s.emailPassword.Text)
 	}}
 	s.emailFLabel = &widget.Label{Text:
-		fmt.Sprintf("Email frequency (%d min)",int(s.app.Preferences().FloatWithFallback("eFrequency",10))),
+		fmt.Sprintf("Email frequency (%d min)",int(fyne.CurrentApp().Preferences().FloatWithFallback("eFrequency",10))),
 		 TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailFrequency=&widget.Slider{Value: s.app.Preferences().FloatWithFallback("eFrequency",10),
+	s.emailFrequency=&widget.Slider{Value: fyne.CurrentApp().Preferences().FloatWithFallback("eFrequency",10),
 		Min: 1.0, Max:60.0, Step: 1, 
 		OnChanged: func(i float64) {
 			s.emailFLabel.SetText(fmt.Sprintf("Email frequency (%d min)",int(i)))
 		}, 
 		OnChangeEnded: func(i float64) {
 			s.emailFrequency.Value = i
-			s.app.Preferences().SetFloat("eFrequency",i)
+			fyne.CurrentApp().Preferences().SetFloat("eFrequency",i)
 	}}
 	s.useEmail = &widget.RadioGroup{Options: onOffOptions, Horizontal: true, Required: true, OnChanged: s.onUseEmailChanged}
-	s.useEmail.SetSelected(s.app.Preferences().StringWithFallback("UseEmail", "Off"))
-	s.onUseEmailChanged(s.app.Preferences().StringWithFallback("UseEmail", "Off"))
+	s.useEmail.SetSelected(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off"))
+	s.onUseEmailChanged(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off"))
 
 	emailContainer := container.NewGridWithColumns(2,
 		NewBoldLabel("Use Email"), s.useEmail,
@@ -138,25 +137,22 @@ func (s *theemaillog) buildLog() *container.Scroll {
 	))
 }
 
-func (s *theemaillog) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildLog()}
-}
-func (s *theemaillog) onUseEmailChanged(selected string) {
+func (s *theemail) onUseEmailChanged(selected string) {
 	//	s.client.OverwriteExisting = selected == "On"
-		s.app.Preferences().SetString("UseEmail",selected)
-		s.emailServer.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailSLabel.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailPort.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailPortLabel.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailUser.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailULabel.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailPassword.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailPLabel.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailFrequency.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
-		s.emailFLabel.Hidden=(s.app.Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		fyne.CurrentApp().Preferences().SetString("UseEmail",selected)
+		s.emailServer.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailSLabel.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailPort.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailPortLabel.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailUser.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailULabel.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailPassword.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailPLabel.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailFrequency.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
+		s.emailFLabel.Hidden=(fyne.CurrentApp().Preferences().StringWithFallback("UseEmail", "Off")=="Off")
 	}
-	func (s *theemaillog) getPassword() string {
-		prefPassword:= s.app.Preferences().StringWithFallback("ePassword","")
+	func (s *theemail) getPassword() string {
+		prefPassword:= fyne.CurrentApp().Preferences().StringWithFallback("ePassword","")
 		var hash,realPassword string
 		var err error
 		hash,err =pfdatabase.MakeHash()
@@ -169,7 +165,7 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 		}
 		return realPassword
 	}
-	func (s *theemaillog) setPassword(realPassword string) error {
+	func (s *theemail) setPassword(realPassword string) error {
 		var hash,prefPassword string
 		var err error
 		hash,err =pfdatabase.MakeHash()
@@ -180,7 +176,10 @@ func (s *theemaillog) onUseEmailChanged(selected string) {
 		if err!=nil {
 			log.Println("setPassWord EncryptPassword error")
 		}
-		s.app.Preferences().SetString("ePassword",prefPassword)
+		fyne.CurrentApp().Preferences().SetString("ePassword",prefPassword)
 		return err
+	}
+	func (s *theemail) tabItem() *container.TabItem {
+		return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildUI()}
 	}
 	

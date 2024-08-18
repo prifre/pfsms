@@ -18,8 +18,7 @@ func TestGetmemoryinfo(t *testing.T) {
 func TestTable(t *testing.T) {
 		a := app.NewWithID("pfsms")
 		w := a.NewWindow("pfsms-gui")
-		appTable := &AppTable{}
-		n:=NewTable(a,w,appTable).tabItem()
+		n:=NewTable(w).tabItem()
 		c:= &container.AppTabs{Items: []*container.TabItem{		n,		}}
 		w.SetContent(c)
 		w.Resize(fyne.NewSize(700, 600))

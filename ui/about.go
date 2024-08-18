@@ -8,20 +8,22 @@ import (
 	"fyne.io/fyne/v2"
 	appearance "fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/prifre/pfsms/pfdatabase"
 
 	"fyne.io/fyne/v2/layout"
 )
 
 type theabout struct {
+	btnAppearance		*widget.Button
 	dodebug				*widget.RadioGroup
 	window  		    fyne.Window
-	app        			fyne.App
 }
 
-func NewAbout(a fyne.App, w fyne.Window) *theabout {
-	return &theabout{app: a, window: w}
+func NewAbout(w fyne.Window) *theabout {
+	return &theabout{ window: w}
 }
 func Getmemoryinfo() string {
 // Alloc uint64
@@ -48,28 +50,74 @@ func Getmemoryinfo() string {
 		return r
 }
 func (a *theabout) abouttext() *fyne.Container {
-	bin := "pfsms"
+	var m string
+	bin := fyne.CurrentApp().UniqueID()
 	var dtg string
 	fi, err := os.Stat(bin)
 	if err == nil {
 		dtg = "on " + fi.ModTime().Format("2006-01-02.15:04:05")
 	}
-	m := fmt.Sprintf("program %q, compiled with go %s %s\n",bin, runtime.Version(), dtg)
+	m +=fyne.CurrentApp().UniqueID()
+	m +="\r\n"
+	m +=fyne.CurrentApp().Metadata().Version
+	m +="\r\n"
+	m +="by Peter Freund\r\nprifre@prifre.com\r\n\r\n"
+	m += fmt.Sprintf("Compiled with go %s %s\r\n", runtime.Version(), dtg)
 	m += "\r\n"+Getmemoryinfo()
+	return container.NewVBox(NewBoldLabel(m))
+}
+func (a *theabout) aboutdatabase() *fyne.Container {
+	var m string
+	m += fmt.Sprintf("Number of customers: %d\r\n",len(new(pfdatabase.DBtype).ShowCustomers()))
+	m += fmt.Sprintf("Number of groups: %d\r\n",len(new(pfdatabase.DBtype).ShowGroups()))
+	m += fmt.Sprintf("Number of records in groups: %d\r\n",len(new(pfdatabase.DBtype).ShowAllGroups()))
+	m += fmt.Sprintf("History records (# of sent sms): %d\r\n",len(new(pfdatabase.DBtype).ShowHistory()))
+
 	return container.NewVBox(		
-		NewBoldLabel("PFSMS"), 
-		NewBoldLabel("by Peter Freund"), 
-		NewBoldLabel("prifre@prifre.com"), 
 		NewBoldLabel(m),
 	)
 }
 func (a *theabout) buildUI() *fyne.Container {
-	interfaceContainer := appearance.NewSettings().LoadAppearanceScreen(a.window)
-	a.dodebug = &widget.RadioGroup{Options: []string{"Yes","No"}, Horizontal: true, Required: true, OnChanged: func(v string) {
-		fyne.CurrentApp().Preferences().SetBool("debug",v=="Yes")
-		Setupfiles()
-		new(pfsettings).buildFilePart()
-	}}
+	a.btnAppearance = &widget.Button{Text: "Change appearance!", OnTapped: func() {
+			dialog.NewCustom("Fix the looks for the application!","Close", 
+			appearance.NewSettings().LoadAppearanceScreen(a.window),
+			a.window).Show()
+		},
+	}
+	a.dodebug = &widget.RadioGroup{Options: []string{"Yes","No"},
+		Horizontal: true, 
+		Required: true, 
+		OnChanged: func(v string) {
+			oldsetting:=fyne.CurrentApp().Preferences().Bool("debug")
+			if oldsetting==(v=="Yes") || !oldsetting==(v=="No") {
+				return
+			}
+			newsetting:=!oldsetting
+			m:=""
+			m +="Application needs to restart after Debug setting has been changed.\r\n"
+			m +="Please note that now all files pfsms uses that are now located in:\r\n"
+			m +=GetHomeDir()+ ".\r\n"
+			fyne.CurrentApp().Preferences().SetBool("debug",newsetting)
+			Setupfiles()
+			m +="will change and instead be located in: \r\n"
+			m += GetHomeDir()+".\r\n"
+			fyne.CurrentApp().Preferences().SetBool("debug",oldsetting)
+			Setupfiles()
+			dialog.NewConfirm("Really change Debug setting?", m, func(confirmed bool) {
+				if !confirmed {
+					if v=="Yes" {
+						a.dodebug.SetSelected("No")
+					} else {
+						a.dodebug.SetSelected("Yes")
+					}
+					return
+				} else {
+					fyne.CurrentApp().Preferences().SetBool("debug",newsetting)
+					Setupfiles()
+					fyne.CurrentApp().Quit()
+				}}, a.window).Show()
+		},
+	}
 	if fyne.CurrentApp().Preferences().Bool("debug") {
 		a.dodebug.SetSelected("Yes")
 	} else  {
@@ -77,14 +125,21 @@ func (a *theabout) buildUI() *fyne.Container {
 	}
 	return container.NewVBox(
 		&widget.Card{Title: "App Info", Content: container.NewHBox(		
-			layout.NewSpacer(),
-			a.abouttext(),
-			container.NewVBox(NewBoldLabel("Debug?"), a.dodebug),
-			layout.NewSpacer(),
+			layout.NewSpacer(),a.abouttext(),layout.NewSpacer(),
 		)},
+		&widget.Card{Title: "Database", Content: container.NewHBox(
+			layout.NewSpacer(),a.aboutdatabase(),layout.NewSpacer())},
+		&widget.Card{Title: "Interface", Content: 
+			container.NewHBox(
+				layout.NewSpacer(),
+				container.NewVBox(
+					container.NewGridWithColumns(2,NewBoldLabel("Debug?"), a.dodebug),
+					layout.NewSpacer(),
+					a.btnAppearance),
+				layout.NewSpacer(),
+			),
+		},
 		layout.NewSpacer(),
-
-		&widget.Card{Title: "User Interface", Content: interfaceContainer},
 	)
 }
 func (s *theabout) tabItem() *container.TabItem {

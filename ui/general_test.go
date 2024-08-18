@@ -26,13 +26,22 @@ func TestFixphonenumber(t *testing.T) {
 		fmt.Println("Error #2")
 		t.Fail()
 	}
+	s = Fixphonenumber("+33736290839", "Sweden (+46)")
+	if s != "0033736290839" {
+		fmt.Println("Error #3 wrong country")
+		t.Fail()
+	}
+	s = Fixphonenumber("+181736290839", "Sweden (+46)")
+	if s != "00181736290839" {
+		fmt.Println("Error #4 wrong country")
+		t.Fail()
+	}
 	s = Fixphonenumber("0046736290839", "Sweden (+46)")
 	if s != "0046736290839" {
-		fmt.Println("Error #3")
+		fmt.Println("Error #5")
 		t.Fail()
 	}
 }
-
 func TestGetLastLines(t *testing.T) {
 	m := ""
 	// for i := 0; i < 30; i++ {
@@ -43,9 +52,9 @@ func TestGetLastLines(t *testing.T) {
 	// defer f.Close()
 	// _, _ = f.WriteString(m)
 	// f.Close()
-	m = ReadLastLineWithSeek(fn, 20)
-	r := strings.Split(m, "\r")
-	for i := 0; i < len(r); i++ {
+	m = ReadLastLineWithSeek(fn, 25)
+	r := strings.Split(m, "\n")
+	for i := 1; i < len(r); i++ {
 		fmt.Println(i, "=>", r[i])
 	}
 }

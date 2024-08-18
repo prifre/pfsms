@@ -16,6 +16,6 @@ func main() {
 	wy=764
 	w.Resize(fyne.NewSize(wx,wy))
 	w.Canvas().Content().Resize(fyne.NewSize(wx,wy))
-	w.SetContent(ui.Create(a, w))
+	w.SetContent(ui.Create( w))
 	w.ShowAndRun()
 }

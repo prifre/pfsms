@@ -408,6 +408,26 @@ func (db *DBtype) ExportGroups(tofile string) {
 		log.Println("#3 ExportGroups WriteFile,",err.Error())
 	}
 }
+func (db *DBtype) ShowHistory() [][]string{
+	var r[][]string
+	var err error
+	var sq,tstamp,groupname,phone,message string
+	db.Opendb()
+	sq ="SELECT tstamp,groupname,phone,message FROM tblHistory ORDER BY tstamp ASC"
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		log.Println("#1 ShowHistory Query ", err.Error())
+	}
+	for rows.Next() {
+		err = rows.Scan(&tstamp,&groupname,&phone,&message)
+		if err!=nil {
+			log.Println("#2 ShowHistory Scan ",err.Error())
+		}
+		r = append(r,[]string{tstamp,groupname,phone,message})
+	}
+	db.Closedatabase()
+	return r
+}
 func (db *DBtype) ExportHistory(tofile string) {
 	// s += "CREATE TABLE tblHistory (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
 	// s += "tstamp VARCHAR(20), phone VARCHAR(20), groupname VARCHAR(100), message TEXT);"
@@ -440,7 +460,7 @@ func (db *DBtype) ExportHistory(tofile string) {
 	}
 }
 func (db *DBtype) SaveHistory(result [][]string) {
-	// resulting string with history from ariassms = tstamp,phone,message
+	// resulting string with history from pfmobile = tstamp,phone,message
 	// message in \"\"
 	var sq string
 	var err error

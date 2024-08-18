@@ -127,7 +127,7 @@ func (s SMStype) Modemreset() bool {
 	s.port.Write([]byte("AT+CMGF=0\r\n")) // Set PDU mode
 	r += myread(s.port)
 	// if mydebug {
-		fmt.Println("MODEMRESET: ", showdebugmsg(r))
+		log.Println("MODEMRESET: ", showdebugmsg(r))
 	// }
 	if strings.Contains(strings.ToUpper(r), "ERROR") || !strings.Contains(r, "OK") || len(r) == 0 {
 		return false
@@ -149,7 +149,7 @@ func (s SMStype) SendSMS(phoneNumber string, message string) bool {
 		s.port.Write([]byte(cmd1[i]))
 		r = myread(s.port)
 		if !strings.Contains(r, ">") {
-			fmt.Printf("ERROR #1: no '>' in part %d: %s", i, r)
+			log.Printf("ERROR #1: no '>' in part %d: %s", i, r)
 			return false
 		}
 		s.port.Write([]byte(cmd2[i]))
@@ -157,7 +157,7 @@ func (s SMStype) SendSMS(phoneNumber string, message string) bool {
 		r += myread(s.port)
 		r += myread(s.port)
 		if !strings.Contains(r, "OK") {
-			fmt.Printf("ERROR #2: no 'OK' in part %d: %s", i, r)
+			log.Printf("ERROR #2: no 'OK' in part %d: %s", i, r)
 			return false
 		}
 	}

@@ -11,11 +11,6 @@ import (
 	"github.com/prifre/pfsms/pfdatabase"
 )
 
-type AppTable struct {
-	// Theme holds the current theme
-	Theme string
-}
-
 type thetable struct {
 	tableCustomers 		*widget.Table
 	tableGroups 		*widget.Table
@@ -23,13 +18,11 @@ type thetable struct {
 	dataGroups			[]string
 	dataAllCustomers	[][]string
 	dataAllGroups		[][]string
-	appTable  			*AppTable
 	window      		fyne.Window
-	app         		fyne.App
 }
 
-func NewTable(a fyne.App, w fyne.Window,  at *AppTable) *thetable {
-	return &thetable{app: a, window: w,  appTable: at}
+func NewTable( w fyne.Window) *thetable {
+	return &thetable{ window: w}
 }
 func (s *thetable) buildTableCustomers() *container.Scroll {
 	if s.dataAllCustomers==nil {
@@ -50,21 +43,9 @@ func (s *thetable) buildTableCustomers() *container.Scroll {
 		o.(*widget.Label).SetText(strings.TrimSpace(s.dataCustomers[i.Row][i.Col]))
 		o.(*widget.Label).Refresh()
 	}
-	// s.tableCustomers.OnSelected=func(i widget.TableCellID) {
-	// 	fmt.Println("Currently selected Customer: ",i)
-	// }
-	// s.tableCustomers.MouseIn=func(i widget.TableCellID) {
-	// 	sq :=fmt.Sprintf("SELECT CONCAT(phone,' ',firstname,' ',lastname) AS data FROM tblCustomers WHERE ORDER BY phone OFFSET %d LIMIT 1 ASC",i.Row)
-	// 	o.(*widget.Label).SetText(GetCustomers(sq))
-	// }
-	// s.window.CenterOnScreen()
-	// s.window.Canvas().Content().Resize()
-	// 	// Update the content size based on the new window size
-	// 	fmt.Println()
-	// }
-	s.tableCustomers.SetColumnWidth(0,s.window.Canvas().Content().Size().Width*0.16)
-	s.tableCustomers.SetColumnWidth(1,s.window.Canvas().Content().Size().Width*0.17)
-	s.tableCustomers.SetColumnWidth(2,s.window.Canvas().Content().Size().Width*0.12)
+	s.tableCustomers.SetColumnWidth(0,s.window.Content().Size().Width*0.16)
+	s.tableCustomers.SetColumnWidth(1,s.window.Content().Size().Width*0.17)
+	s.tableCustomers.SetColumnWidth(2,s.window.Content().Size().Width*0.12)
 	return container.NewScroll(s.tableCustomers)
 }
 func (s *thetable) buildTableGroups() *container.Scroll {
@@ -105,16 +86,14 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 		s.buildTableCustomers()
 		s.tableCustomers.Refresh()
 	}
-	s.tableGroups.SetColumnWidth(0,s.window.Canvas().Content().Size().Width*0.2)
+	s.tableGroups.SetColumnWidth(0,s.window.Canvas().Size().Width*0.2)
 	return container.NewScroll(s.tableGroups)
 }
+func (s *thetable) buildUI() *container.Scroll {
+	return container.NewScroll(container.NewGridWithColumns(2,
+		s.buildTableCustomers(),
+		s.buildTableGroups()))
+}
 func (s *thetable) tabItem() *container.TabItem {
-	// s.tableGroups.SetColumnWidth(0,512)
-	c:= &container.TabItem{Text: "Customers", Icon: theme.StorageIcon(), Content: 
-	container.NewScroll(container.NewGridWithColumns(2,
-			s.buildTableCustomers(),
-			s.buildTableGroups())),
-	}
-	c.Content.Refresh()
-	return c
+	return &container.TabItem{Text: "Customers", Icon: theme.StorageIcon(), Content: s.buildUI()}
 }

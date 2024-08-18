@@ -13,8 +13,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/prifre/pfsms/ariasms"
 	"github.com/prifre/pfsms/pfdatabase"
+	"github.com/prifre/pfsms/pfmobile"
 )
 
 var (
@@ -37,52 +37,52 @@ type pfsettings struct {
 	groupsfile         *widget.Label
 	btnImportGroups    *widget.Button
 	btnExportGroups    *widget.Button
-	fileLog            *widget.Label
+	logfile            *widget.Label
+	historyfile        *widget.Label
 	btnExportHistory   *widget.Button
 	btnOpenLog         *widget.Button
 	logtext            *widget.Entry
 
 	window fyne.Window
-	app    fyne.App
 }
 
-func NewSettings(a fyne.App, w fyne.Window) *pfsettings {
-	return &pfsettings{app: a, window: w}
+func NewSettings(w fyne.Window) *pfsettings {
+	return &pfsettings{ window: w}
 }
 func (s *pfsettings) buildMobilePart() *fyne.Container {
 	var mobileContainer *fyne.Container
-	s.mobileNumber = &widget.Entry{Text: s.app.Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
-		s.app.Preferences().SetString("mobilenumber", s.mobileNumber.Text)
+	s.mobileNumber = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
+		fyne.CurrentApp().Preferences().SetString("mobilenumber", s.mobileNumber.Text)
 	}}
-	var sms ariasms.SMStype = *new(ariasms.SMStype)
+	var sms pfmobile.SMStype = *new(pfmobile.SMStype)
 	p, err := sms.GetPortsList()
 	if err != nil {
 		log.Print("settings.buildUI #1 GetPortsList Error")
 	}
 	s.mobilePort = &widget.Select{Options: p, OnChanged: func(sel string) {
-		s.app.Preferences().SetString("mobilePort", sel)
-	}, Selected: s.app.Preferences().StringWithFallback("mobilePort", ""),
+		fyne.CurrentApp().Preferences().SetString("mobilePort", sel)
+	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobilePort", ""),
 	}
 	s.mobileModel = &widget.Select{Options: mobilemodels, OnChanged: func(sel string) {
-		s.app.Preferences().SetString("mobileModel", sel)
-	}, Selected: s.app.Preferences().StringWithFallback("mobileModel", ""),
+		fyne.CurrentApp().Preferences().SetString("mobileModel", sel)
+	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobileModel", ""),
 	}
 	allcountries := GetAllCountries()
 	s.mobileCountry = &widget.Select{Options: allcountries, OnChanged: func(sel string) {
-		s.app.Preferences().SetString("moileCountry", sel)
-	}, Selected: s.app.Preferences().StringWithFallback("mobileCountry", "Sweden (+46)"),
+		fyne.CurrentApp().Preferences().SetString("moileCountry", sel)
+	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden (+46)"),
 	}
 	s.mobileAddhash = &widget.Check{Text: "Add '#=' and messagenumber to end of sent messages",
-		OnChanged: func(sel bool) { s.app.Preferences().SetBool("addHash", sel) },
-		Checked:   s.app.Preferences().Bool("addHash")}
+		OnChanged: func(sel bool) { fyne.CurrentApp().Preferences().SetBool("addHash", sel) },
+		Checked:   fyne.CurrentApp().Preferences().Bool("addHash")}
 	s.btnTestSMS = &widget.Button{Text: "Click to send a test sms message to yourself.", OnTapped: func() {
 		t := time.Now().Format("2006-01-02 15:04:05")
 		testmessage := fmt.Sprintf("This is a short testmessage, sent %s", t)
-		pn := s.app.Preferences().StringWithFallback("mobilenumber", "")
+		pn := fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", "")
 		pn = Fixphonenumber(pn, s.mobileCountry.Selected)
-		var sms ariasms.SMStype = *new(ariasms.SMStype)
-		sms.Addhash = s.app.Preferences().Bool("addHash")
-		sms.Comport = s.app.Preferences().StringWithFallback("mobilePort", "COM2")
+		var sms pfmobile.SMStype = *new(pfmobile.SMStype)
+		sms.Addhash = fyne.CurrentApp().Preferences().Bool("addHash")
+		sms.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobilePort", "COM2")
 		sms.SendMessage([]string{pn}, testmessage)
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
@@ -114,12 +114,11 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 	// Customers ImportExport
 	s.btnImportCustomers = &widget.Button{Text: "Import Customers", OnTapped: func() {
 		new(pfdatabase.DBtype).ImportCustomers(fyne.CurrentApp().Preferences().String("customersfile"))
-		s.window.SetContent(Create(s.app, s.window))
-		// t.tableShowCustomers=t.listCustomers()
-		// t.tableShowCustomers.Refresh()
+		log.Println("Imported Customers")
 	}}
 	s.btnExportCustomers = &widget.Button{Text: "Export Customers", OnTapped: func() {
 		new(pfdatabase.DBtype).ExportCustomers(fyne.CurrentApp().Preferences().String("customersfile"))
+		log.Println("Exported Customers")
 	}}
 	s.customersfile = &widget.Label{Text: fyne.CurrentApp().Preferences().String("customersfile")}
 
@@ -133,16 +132,19 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 		b := string(b0)
 		b = strings.Replace(b, "\n", "", -1)
 		new(pfdatabase.DBtype).ImportGroups(b)
+		log.Println("Imported Groups")
 	}}
 	s.btnExportGroups = &widget.Button{Text: "Export Groups", OnTapped: func() {
-		fn := s.app.Preferences().StringWithFallback("groupsfile", fyne.CurrentApp().Preferences().String("groupsfile"))
+		fn := fyne.CurrentApp().Preferences().StringWithFallback("groupsfile", fyne.CurrentApp().Preferences().String("groupsfile"))
 		new(pfdatabase.DBtype).ExportGroups(fn)
+		log.Println("Exported Groups")
 	}}
 	s.groupsfile = &widget.Label{Text: fyne.CurrentApp().Preferences().String("groupsfile")}
 
 	// History ImportExport
 	s.btnExportHistory = &widget.Button{Text: "Export History", OnTapped: func() {
 		new(pfdatabase.DBtype).ExportHistory(fyne.CurrentApp().Preferences().String("historyfile"))
+		log.Println("Exported History")
 	}}
 	s.btnOpenLog = &widget.Button{Text: "Open Log", OnTapped: func() {
 		dd := fyne.CurrentApp().Preferences().String("pfsmslog")
@@ -155,13 +157,15 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 			exec.Command("explorer", dd).Start()
 		}
 	}}
-	s.fileLog = &widget.Label{Text: fyne.CurrentApp().Preferences().String("pfsmslog")}
+	s.logfile= &widget.Label{Text: fyne.CurrentApp().Preferences().String("pfsmslog")}
+	s.historyfile= &widget.Label{Text: fyne.CurrentApp().Preferences().String("historyfile")}
 
 	fileContainer = container.NewGridWithColumns(2,
 		NewBoldLabel("Location of default datafiles and textfiles:"), s.btnOpenDatadir,
 		container.NewGridWithColumns(2, s.btnExportCustomers, s.btnImportCustomers), s.customersfile,
 		container.NewGridWithColumns(2, s.btnExportGroups, s.btnImportGroups), s.groupsfile,
-		container.NewGridWithColumns(2, s.btnExportHistory, s.btnOpenLog), s.fileLog,
+		container.NewGridWithColumns(1, s.btnExportHistory), s.historyfile,
+		container.NewGridWithColumns(1,  s.btnOpenLog), s.logfile,
 	)
 	return fileContainer
 }
