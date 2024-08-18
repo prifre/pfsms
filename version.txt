@@ -1,0 +1,29 @@
+Version info
+
+TODO:
+add debug on/off into settings
+setup webserver sms.prifre.com
+email unattended handling...
+document emailhandling
+but check for bugs - grouphandling!
+messags export/import/save?
+Checking for duplicate phonenumbers while saving Group
+button in Message "Check for that phonenumbers exists in Customer database"
+import/export messages
+export LOG, remove history...
+
+smslog..
+add debug yes/no to settings
+ONE LOG! (errors/email/sms)
+
+LATEST TOP!
+2024-08-11
+grouphandling works
+
+2024-07-28
+done: test sms to self.
+done: themeshandling.
+contry handling done
+
+2024-07-22
+added Checkemail, hashing of passwords

@@ -1,6 +1,6 @@
 [Details]
 Name = "pfsms"
 ID = "pfsms.github.prifre"
-Icon = "ariasms/pfsms.png"
+Icon = "ui/pfsms.png"
 Version = "v0.1.0"
 Build = 1

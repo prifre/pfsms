@@ -10,76 +10,78 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 )
+func GetHomeDir() string {
+	var err error
+	var mydebug bool
+	var path string
+	mydebug = fyne.CurrentApp().Preferences().Bool("debug")
+	if mydebug {
+		path, err = os.Getwd()
+		if err != nil {
+			log.Fatal("#1 GetHomeDir Failed to get Getwd!!!(" + path + ") ", err.Error())
+		}
+	} else {
+		path, err = os.UserHomeDir()
+		if err != nil {
+			log.Println("#2 GetHomeDir Failed to get UserHomeDir!!! (" + path + ")", err.Error())
+		}
+	}
+	if fyne.CurrentApp().UniqueID()=="testApp" {
+		path="C:\\dev\\go\\src\\pfsms"
+	}
+	path = fmt.Sprintf("%s%c%s", path, os.PathSeparator, "pfsms")
+	if _, err = os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			err = os.Mkdir(path, 0755)
+			if err!=nil {
+				log.Fatal("#3 GetHomeDir Could not make " + path + " " + err.Error())
+			}
+		} else {
+			log.Fatal("#4 GetHomeDir Could not make " + path + " " + err.Error())
+			// other error
+		}
+	}
+	return path
+}
+func Setupfiles() {
+	var wrt io.Writer
+	var err error
+	fyne.CurrentApp().Preferences().SetString("customersfile", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "customers.txt"))
+	fyne.CurrentApp().Preferences().SetString("groupsfile", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "groups.txt"))
+	fyne.CurrentApp().Preferences().SetString("historyfile", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "history.txt"))
+	fyne.CurrentApp().Preferences().SetString("pfsmsdb", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "pfsms.db"))
+	fyne.CurrentApp().Preferences().SetString("pfsmslog", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "pfsms.log"))
+	f, err := os.OpenFile(fyne.CurrentApp().Preferences().StringWithFallback("pfsmslog", ""), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic("Error opening pfsms.log:" + err.Error())
+	}
+	//	defer f.Close()
+	wrt = io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
+}
 func NewBoldLabel(text string) *widget.Label {
 	return &widget.Label{Text: text, TextStyle: fyne.TextStyle{Bold: true}}
 }
 func Appendtotextfile(fn string, m string) error {
 	var err error
-	var path string
-	path, err = os.UserHomeDir()
-	if err != nil {
-		panic("path")
-	}
-	path = fmt.Sprintf("%s%c%s",path,os.PathSeparator,"pfsms")
-	if _, err = os.Stat(path); err != nil {
-		log.Println("#1 Adding folder data: " + path)
-		if os.IsNotExist(err) {
-			err = os.Mkdir(path, 0755)
-			if err != nil {
-				panic(err.Error())
-			}
-			// file does not exist
-		} else {
-			panic(err.Error())
-			// other error
-		}
-	}
-	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
-	// m=strings.Replace(m,"\r","<CR>",-1)
-	// m=strings.Replace(m,"\n","",-1)
-	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
+	f, _ := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer f.Close()
-	if _, err := f.WriteString(m); err != nil {
-		log.Println(err)
-	}
+	_, err = f.WriteString(m)
 	return err
 }
-func Readtextfile(fn string) (string,error) {
+func Readtextfile(fn string) (string, error) {
 	var err error
-	var path string
-	path, err = os.UserHomeDir()
-	if err != nil {
-		panic("path")
-	}
-	path = fmt.Sprintf("%s%c%s",path,os.PathSeparator,"pfsms")
-	if _, err = os.Stat(path); err != nil {
-		log.Println("#1 Adding folder data: " + path)
-		if os.IsNotExist(err) {
-			err = os.Mkdir(path, 0755)
-			if err != nil {
-				panic(err.Error())
-			}
-			// file does not exist
-		} else {
-			panic(err.Error())
-			// other error
-		}
-	}
-	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
 	var b0 []byte
 	b0, err = os.ReadFile(fn) // SQL to make tables!
 	if err != nil {
 		fmt.Print(err)
 	}
-	return string(b0),err
+	return string(b0), err
 }
 func GetAllCountries() []string {
-// Countries taken from github.com/IftekherSunny/go_country and from
-// https://en.wikipedia.org/wiki/List_of_country_calling_codes
-	var  thecountries = []string{
+	// Countries taken from github.com/IftekherSunny/go_country and from
+	// https://en.wikipedia.org/wiki/List_of_country_calling_codes
+	var thecountries = []string{
 		"Afghanistan (+93)",
 		"Albania (+355)",
 		"Algeria (+213)",
@@ -327,134 +329,61 @@ func GetAllCountries() []string {
 		"Zimbabwe} (+263)"}
 	return thecountries
 }
-func Fixphonenumber(pn string,cc string) string {
+func Fixphonenumber(pn string, cc string) string {
 	// pn phonenumber  cc coutrycode
 	// Sweden (+46) converts to 0046
-	var cci string ="00"
-	for i:=0;i<len(cc);i++ {
-		if strings.Index("0123456789",string(cc[i]))>0 {
-			cci +=string(cc[i])
+	var cci string = "00"
+	for i := 0; i < len(cc); i++ {
+		if strings.Index("0123456789", string(cc[i])) > 0 {
+			cci += string(cc[i])
 		}
 	}
-	if pn[0:2]==string("00") {
+	if pn[0:2] == string("00") {
 		return pn
 	}
-	if string(pn[0])=="0" {
-		return  cci+pn[1:]
+	if string(pn[0]) == "0" {
+		return cci + pn[1:]
 	}
-	if string(pn[0])=="+" {
-		return "00"+pn[1:]
+	if string(pn[0]) == "+" {
+		return "00" + pn[1:]
 	}
-	return cci+pn
+	return cci + pn
 }
-func Setuplog() {
-	var wrt io.Writer
-	var path string
+func ReadLastLineWithSeek(fn string, cnt int) string {
 	var err error
-	path, err = os.UserHomeDir()
-	if err!=nil {
-		panic("path")
+	var lines string
+	fileHandle, err := os.Open(fn)
+	if err != nil {
+		panic("Cannot open file")
 	}
-	path = fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"pfsms")
-	if _, err = os.Stat(path); err != nil {
-		log.Println("#1 Adding folder data: " + path)
-		if os.IsNotExist(err) {
-			err = os.Mkdir(path, 0755)
-			if err!=nil {
-				panic(err.Error())
-			}
-			// file does not exist
-		} else {
-			panic(err.Error())
-			// other error
+	defer fileHandle.Close()
+	var cursor int64 = 0
+	stat, _ := fileHandle.Stat()
+	cursor = stat.Size()
+	// linecount:=0
+	var lc int
+	lines =""
+	for {
+		cursor--
+		fileHandle.Seek(cursor, io.SeekStart)
+		char := make([]byte, 1)
+		fileHandle.Read(char)
+		if len(lines)==0 && strings.Contains("\r\n \t",string(char)) {
+			continue
+		}
+		if string(char)=="\r" {
+			lc++
+		}
+		if lc > cnt {
+			break
+		}
+		lines = fmt.Sprintf("%s%s", string(char), lines) // there is more efficient way
+		if cursor <= 0 { // stop if we are at the begining
+			break
 		}
 	}
-	f, err := os.OpenFile( fmt.Sprintf("%s%c%s",path ,os.PathSeparator,"pfsmslog.txt"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+	for strings.Contains("\r\n \t",string(lines[0])) && len(lines)>1 {
+		lines = lines[1:]
 	}
-	//	defer f.Close()
-	wrt = io.MultiWriter(os.Stdout, f)
-	log.SetOutput(wrt)
-}
-func Getcustomersfilename() string {
-	var path string
-	var err error
-	path, err = os.UserHomeDir()
-	if err!=nil {
-		panic("path")
-	}
-	path = fmt.Sprintf("%s%c%s%c%s",path ,os.PathSeparator,"pfsms",os.PathSeparator,"customers.txt")
-	return path
-}
-func Getgroupsfilename() string {
-	var path string
-	var err error
-	path, err = os.UserHomeDir()
-	if err!=nil {
-		panic("path")
-	}
-	path = fmt.Sprintf("%s%c%s%c%s",path ,os.PathSeparator,"pfsms",os.PathSeparator,"groups.txt")
-	return path
-}
-func ReadLastLineWithSeek(fn string,cnt int) (string, error) {
-	var err error
-	var path string
-	path, err = os.UserHomeDir()
-	if err != nil {
-		panic("path")
-	}
-	path = fmt.Sprintf("%s%c%s",path,os.PathSeparator,"pfsms")
-	if _, err = os.Stat(path); err != nil {
-		log.Println("#1 Adding folder data: " + path)
-		if os.IsNotExist(err) {
-			err = os.Mkdir(path, 0755)
-			if err != nil {
-				panic(err.Error())
-			}
-			// file does not exist
-		} else {
-			panic(err.Error())
-			// other error
-		}
-	}
-	fn = fmt.Sprintf("%s%c%s",path ,os.PathSeparator, fn)
-    fileHandle, err := os.Open(fn)
-
-    if err != nil {
-        panic("Cannot open file")
-    }
-    defer fileHandle.Close()
-
-    line := ""
-    var cursor int64 = 0
-    stat, _ := fileHandle.Stat()
-    cursor = stat.Size()
-	linecount:=0
-    for { 
-        cursor --
-        fileHandle.Seek(cursor, io.SeekStart)
-
-        char := make([]byte, 1)
-        fileHandle.Read(char)
-
-        if  (char[0] == 10 || char[0] == 13) { // stop if we find a line
-			if len(line)>0 {
-				if !(line[0]==10 || line[0]==13) {
-					linecount ++
-					if linecount>=cnt {
-						break
-					}
-				}
-			} else {
-				linecount++
-			}
-        }
-        line = fmt.Sprintf("%s%s", string(char), line) // there is more efficient way
-        if cursor <= 0 { // stop if we are at the begining
-            break
-        }
-    }
-
-    return line,err
+	return lines
 }

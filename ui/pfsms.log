@@ -1,0 +1,63 @@
+2024/08/13 00:33:32 #2 database not found, creating new db: C:\dev\go\src\pfsms\pfsms\pfsms.db
+2024/08/13 00:33:32 Database tables created
+2024/08/13 00:39:39 Connecting to server...
+2024/08/13 00:39:39 Connected
+2024/08/13 00:39:41 Authentication failed.
+2024/08/13 00:41:42 Connecting to server...
+2024/08/13 00:41:42 Connected
+2024/08/13 00:41:44 Authentication failed.
+2024/08/13 00:41:44 Email check ok.
+2024/08/13 00:45:30 Connected to server, checking login
+2024/08/13 00:45:32 #1 Login failed: Authentication failed.
+2024/08/13 00:45:32 Email check failed.
+2024/08/13 00:45:47 Connected to server, checking login
+2024/08/13 00:45:47 Logged in
+2024/08/13 00:45:48 Email check ok.
+2024/08/13 00:45:53 Handling mail...
+2024/08/13 00:45:53 Connected to server, checking login
+2024/08/13 00:45:53 Logged in
+2024/08/13 00:45:53 Connected to server, checking login
+2024/08/13 00:45:53 Logged in
+2024/08/13 00:45:53 IDs found: []
+2024/08/13 00:45:53 No mail...
+2024/08/13 00:45:54 Connected to server, checking login
+2024/08/13 00:45:54 Logged in
+2024/08/13 00:45:54 Moved SMS mail to sms folder.
+2024/08/13 00:48:57 #2 ImportCustomers prepare failed:  INSERT INTO tblCustomers (phone,firstname,lastname,note) VALUES ('0046859075040','Alen','o'Kelly','')   near "Kelly": syntax error
+2024/08/13 00:48:57 Fyne error:  Failed to focus object which is not part of the canvas’ content, menu or overlays.
+2024/08/13 00:48:57   At: C:/dev/go/pkg/mod/fyne.io/fyne/v2@v2.4.5/internal/driver/common/canvas.go:182
+2024/08/13 00:50:43 #2 database not found, creating new db: C:\dev\go\src\pfsms\pfsms\pfsms.db
+2024/08/13 00:50:43 Database tables created
+2024/08/13 00:51:23 #2 ImportCustomers prepare failed:  INSERT INTO tblCustomers (phone,firstname,lastname,note) VALUES ('0046859075040','Alen','o'Kelly','')   near "Kelly": syntax error
+2024/08/13 00:51:23 Fyne error:  Failed to focus object which is not part of the canvas’ content, menu or overlays.
+2024/08/13 00:51:23   At: C:/dev/go/pkg/mod/fyne.io/fyne/v2@v2.4.5/internal/driver/common/canvas.go:182
+2024/08/13 00:51:23 Fyne error:  Failed to focus object which is not part of the canvas’ content, menu or overlays.
+2024/08/13 00:51:23   At: C:/dev/go/pkg/mod/fyne.io/fyne/v2@v2.4.5/internal/driver/common/canvas.go:182
+2024/08/13 01:09:41 Connected to server, checking login
+2024/08/13 01:09:41 Logged in
+2024/08/13 01:09:41 Email check ok.
+2024/08/13 01:10:04 Connected to server, checking login
+2024/08/13 01:10:04 Logged in
+2024/08/13 01:10:04 Email check ok.
+2024/08/16 22:47:03 Got 1 phonenumbers to send ok.
+2024/08/16 22:47:04 --------------------SENDSMS FAILED
+2024/08/16 22:47:10 MODEMRESET:  \r\n+CME Error:PACM(AP),NOT_ALLOWED_SLO\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),NOT_ALLOWED_SLO\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),NOT_ALLOWED_SLO\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),NOT_ALLOWED_SLO\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),NOT_ALLOWED_SLO\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),NOT_ALLOWED_SLO\r\n\r\nOK\r\n
+2024/08/16 22:47:10 --------------------MODEMRESET FAILED
+2024/08/16 22:47:18 MODEMRESET:  AT+CSCA?\r\r\n+CSCA: "+46735480000",145\r\n\r\nOK\r\nAT+CFUN=0\r\r\nOK\r\n\r\nOK\r\nNANAATE0\r\r\nOK\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),UNREGISTED\r\n\r\nOK\r\n\nOK\r\n\r\nOK\r\n\r\nOK\r\n
+2024/08/16 22:47:18 --------------------MODEMRESET FAILED
+2024/08/16 22:47:26 MODEMRESET:  \r\nOK\r\n\r\nOK\r\nNANA\r\nOK\r\n\r\nOK\r\n\r\n+CME Error:PACM(AP),UNREGISTED\r\n\r\nOK\r\n\nOK\r\n\r\nOK\r\n\r\nOK\r\n
+2024/08/16 22:47:26 --------------------MODEMRESET FAILED
+2024/08/16 22:47:33 MODEMRESET:  \r\nOK\r\n\r\nOK\r\nNANA\r\nOK\r\n\r\nOK\r\n\r\nOK\r\n\r\nOK\r\n
+2024/08/16 22:47:33 --------------------MODEMRESET OK
+2024/08/16 22:47:36 Message 1/1 to phone +46736290839 sent! (failures: 1)
+2024/08/16 22:47:36 RESULT OF SMS SENDING: Failures: 1 Success: 1
+2024/08/16 22:47:36 Started: 2024-08-16 22:47:03  Finished: 2024-08-16 22:47:36  Duration: 33.0522736s
+2024/08/16 22:47:36 Speed: 33s/sms
+2024/08/16 22:47:36 Got 1 phonenumbers to send ok.
+2024/08/16 22:47:38 Message 1/1 to phone +46736290839 sent! (failures: 0)
+2024/08/16 22:47:38 RESULT OF SMS SENDING: Failures: 0 Success: 1
+2024/08/16 22:47:38 Started: 2024-08-16 22:47:36  Finished: 2024-08-16 22:47:38  Duration: 2.5865171s
+2024/08/16 22:47:38 Speed: 2s/sms
+2024/08/17 22:45:14 Connected to server, checking login
+2024/08/17 22:45:14 Logged in
+2024/08/17 22:45:14 Email check ok.

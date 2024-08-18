@@ -15,6 +15,7 @@ import (
 )
 
 type theabout struct {
+	dodebug				*widget.RadioGroup
 	window  		    fyne.Window
 	app        			fyne.App
 }
@@ -46,8 +47,7 @@ func Getmemoryinfo() string {
         // r += fmt.Sprintf("\r\nNumGC = %v\n", m.NumGC)
 		return r
 }
-func (a *theabout) buildUI() *fyne.Container {
-	interfaceContainer := appearance.NewSettings().LoadAppearanceScreen(a.window)
+func (a *theabout) abouttext() *fyne.Container {
 	bin := "pfsms"
 	var dtg string
 	fi, err := os.Stat(bin)
@@ -56,20 +56,34 @@ func (a *theabout) buildUI() *fyne.Container {
 	}
 	m := fmt.Sprintf("program %q, compiled with go %s %s\n",bin, runtime.Version(), dtg)
 	m += "\r\n"+Getmemoryinfo()
+	return container.NewVBox(		
+		NewBoldLabel("PFSMS"), 
+		NewBoldLabel("by Peter Freund"), 
+		NewBoldLabel("prifre@prifre.com"), 
+		NewBoldLabel(m),
+	)
+}
+func (a *theabout) buildUI() *fyne.Container {
+	interfaceContainer := appearance.NewSettings().LoadAppearanceScreen(a.window)
+	a.dodebug = &widget.RadioGroup{Options: []string{"Yes","No"}, Horizontal: true, Required: true, OnChanged: func(v string) {
+		fyne.CurrentApp().Preferences().SetBool("debug",v=="Yes")
+		Setupfiles()
+		new(pfsettings).buildFilePart()
+	}}
+	if fyne.CurrentApp().Preferences().Bool("debug") {
+		a.dodebug.SetSelected("Yes")
+	} else  {
+		a.dodebug.SetSelected("No")
+	}
 	return container.NewVBox(
 		&widget.Card{Title: "App Info", Content: container.NewHBox(		
 			layout.NewSpacer(),
-			container.NewVBox(		
-				NewBoldLabel("PFSMS"), 
-				layout.NewSpacer(),
-				NewBoldLabel("by Peter Freund"), 
-				NewBoldLabel("prifre@prifre.com"), 
-				layout.NewSpacer(),
-				NewBoldLabel(m),
-			),
+			a.abouttext(),
+			container.NewVBox(NewBoldLabel("Debug?"), a.dodebug),
 			layout.NewSpacer(),
 		)},
 		layout.NewSpacer(),
+
 		&widget.Card{Title: "User Interface", Content: interfaceContainer},
 	)
 }

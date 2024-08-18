@@ -15,7 +15,6 @@ func MakeHash() (string,error) {
 	var sq string
 	var rows *sql.Rows
     var h,hash string
-	// fmt.Println("nanostamp=",nanostamp,"tstamp=",tstamp)	
 	db := new(DBtype)
 	db.Opendb()
 	sq="SELECT hash FROM tblHashtable"

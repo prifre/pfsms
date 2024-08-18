@@ -2,8 +2,6 @@ package main
 
 //Main file
 
-//	"github.com/prifre/pfsms/ui"
-
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -11,10 +9,13 @@ import (
 )
 
 func main() {
+	var wx,wy float32
 	a := app.NewWithID("pfsms")
 	w := a.NewWindow("pfsms-gui")
+	wx=1024
+	wy=764
+	w.Resize(fyne.NewSize(wx,wy))
+	w.Canvas().Content().Resize(fyne.NewSize(wx,wy))
 	w.SetContent(ui.Create(a, w))
-	w.Resize(fyne.NewSize(1024,764))
-	w.SetMaster()
 	w.ShowAndRun()
 }

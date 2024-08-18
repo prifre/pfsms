@@ -1,3 +1,4 @@
+
 # pfsms
 
 PFSMS is a tool for sending multiple SMS messages using a Mobile Phone connected via USB to the computer.
@@ -8,8 +9,7 @@ SMS messaging
 To send an sms, just go to Message tab and either paste desired phonenumbers separated by commas or choose a group.
 If more than one phone is specified, you will also have to specify a group name. A group will then be created.
 Groups are saved into the Groups database, see below.
-When writing a message, you can insert firstname, lastname and note, by writing 
-"<<fname>>", "<<lname>>" and "<<note>>".
+When writing a message, you can insert firstname and lastname, by writing "<<fname>>" and "<<lname>>".
 
 Customers handling
 It should be simple to handle, so it is not intended to be some kind of sms customer management system.
@@ -30,13 +30,19 @@ This means all phonenumbers, when used to send sms will look like (for Sweden): 
 
 Groups handling
 It should be easy to send sms to just specific customers, based on Groups.
-Groups can be maintained using "Import/Export Groups".
-Additional groups can be created using by sending messages to multiple phonesnumbers.
+Groups can be maintained using "Import/Export Groups". But easiest is to just under Messages
+specify Groupname and Phonenumbers and save as Group.
 
 Messages
+It is easy to recall a specific set of phones using Groups.
 There is no real limit on sms messages. They work with special characters "åäöÅÄÖ".
 It is not possible to send images in sms (MMS).
 
+Logging
+It is important to keep track of everything. Therefore a lot of textfiles are used to keep track.
+pfsms.txt - logfile, contain info on bugs, errormessages and what is happening in Program
+history.txt - a textfile
+sm
 Program was developed using Go and Fyne, originally for Windows.
 It should be possible to adjust it for Linux and Mac fairly easily.
 

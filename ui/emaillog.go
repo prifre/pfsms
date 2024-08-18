@@ -8,8 +8,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/prifre/pfsms/db"
-	pfemail "github.com/prifre/pfsms/email"
+	"github.com/prifre/pfsms/pfdatabase"
+	"github.com/prifre/pfsms/pfemail"
 )
 
 type theemaillog struct {
@@ -88,58 +88,45 @@ func (s *theemaillog) buildLog() *container.Scroll {
 		s.emailPLabel, s.emailPassword,
 		s.emailFLabel,s.emailFrequency,
 	)
-	s.logtext =&widget.Label{}
-	var txt string
-	txt,err = ReadLastLineWithSeek("emaillog.txt",18)
-	if err!=nil {
-		log.Println("#1 buildLog!", err.Error())
-	}
-	s.logtext.Text=txt
+	m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
+	s.logtext = &widget.Label{Text: m}
 	s.btnCheck = &widget.Button{Text:"Check Email",OnTapped: func() {
 		e:=new(pfemail.Etype)
 		err = e.Checkemaillogin()
 		if err!=nil {
-			Appendtotextfile("emaillog.txt","Email check failed.\r\n")
+			log.Println("Email check failed.")
 		} else {
-			Appendtotextfile("emaillog.txt","Email check ok.\r\n")
+			log.Println("Email check ok.")
 		}
-		var m string
-		m,err = ReadLastLineWithSeek("emaillog.txt",18)
-		if err!=nil {
-			log.Println("#1 buildLog!", err.Error())
-		}
-		s.logtext.Text = m
+		m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
+		s.logtext.SetText(m)
 		s.logtext.Refresh()
 	}}
 	s.btnStart = &widget.Button{Text:"Start Email",OnTapped: func() {
 		e:=new(pfemail.Etype)
-		Appendtotextfile("emaillog.txt","Handling mail...\r\n")
+		log.Println("Handling mail...")
 		err = e.Login()
 		if err!=nil {
 			log.Println("Login failed!")
 		}
 		m0:=e.Getallsmsmail()
 		if m0!=nil {
-			Appendtotextfile("emaillog.txt","Got Email!!!\r\n")
+			log.Println("Got Email!!!")
 			m :=  "SUBJECT:"+ m0[0].Envelope.Subject
 			// m += "SENDER: "+ m0[0].Envelope.Sender.Address
 			// fmt.Println("\r\nFlags: ", m0[0].Flags)		} else {
-			Appendtotextfile("emaillog.txt",m+"\r\n")
+			log.Println(m+"\r\n")
 		} else {
-			Appendtotextfile("emaillog.txt","No mail...\r\n")
+			log.Println("No mail...")
 		}
 		err = e.Moveallsmsmail()
 		if err!=nil {
-			Appendtotextfile("emaillog.txt","Move SMS Mail failed.\r\n")
+			log.Println("Move SMS Mail failed.")
 		} else {
-			Appendtotextfile("emaillog.txt","Moved SMS mail to sms folder.\r\n")
+			log.Println("Moved SMS mail to sms folder.")
 		}
-		var m string
-		m,err = ReadLastLineWithSeek("emaillog.txt",18)
-		if err!=nil {
-			log.Println("#2 buildLog!", err.Error())
-		}
-		s.logtext.Text = m
+		m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
+		s.logtext.SetText( m)
 		s.logtext.Refresh()
 	}}
 
