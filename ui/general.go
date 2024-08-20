@@ -27,9 +27,9 @@ func GetHomeDir() string {
 		}
 	}
 	if fyne.CurrentApp().UniqueID()=="testApp" {
-		path="C:\\dev\\go\\src\\pfsms"
+		path="C:\\dev\\go\\src\\pfsmsdata"
 	}
-	path = fmt.Sprintf("%s%c%s", path, os.PathSeparator, "pfsms")
+	path = fmt.Sprintf("%s%c%s", path, os.PathSeparator, "pfsmsdata")
 	if _, err = os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			err = os.Mkdir(path, 0755)

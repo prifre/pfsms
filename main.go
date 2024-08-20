@@ -11,7 +11,7 @@ import (
 func main() {
 	var wx,wy float32
 	a := app.NewWithID("pfsms")
-	w := a.NewWindow("pfsms-gui")
+	w := a.NewWindow("pfsms")
 	wx=1024
 	wy=764
 	w.Resize(fyne.NewSize(wx,wy))

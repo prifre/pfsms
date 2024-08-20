@@ -26,8 +26,8 @@ type theform struct {
 	window         fyne.Window
 }
 
-func NewMessages( w fyne.Window) *theform {
-	return &theform{ window: w}
+func NewMessages(w fyne.Window) *theform {
+	return &theform{window: w}
 }
 func (s *theform) buildUI() *container.Scroll {
 	s.groupname = &widget.Entry{}
@@ -46,7 +46,7 @@ func (s *theform) buildUI() *container.Scroll {
 	s.dataAllGroups = new(pfdatabase.DBtype).ShowAllGroups()
 	s.groupSelect = &widget.Select{Options: new(pfdatabase.DBtype).ShowGroups(),
 		Selected: "",
-		 OnChanged: func(v string) {
+		OnChanged: func(v string) {
 			s.phone.Text = s.Getphonesforgroup(v)
 			s.groupname.Text = v
 			s.groupname.Refresh()
@@ -95,19 +95,19 @@ func (s *theform) buildUI() *container.Scroll {
 	}}
 	GroupsInfo := "To use multiple mobile numbers, separate them with commas or Enter.\r\n"
 	GroupsInfo += "Click Save Group to reuse in future."
-	MessageInfo:="To insert firstname and/or lastname, use <<Fname>> and <<Lname>> in message."
+	MessageInfo := "To insert firstname and/or lastname, use <<Fname>> and <<Lname>> in message."
 	s.form = &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
-			{Text:"", Widget: NewBoldLabel(GroupsInfo)},
-			{Text: "Groups", Widget: container.NewGridWithColumns(3,s.groupSelect, s.btnSaveGroup, s.btnDeleteGroup)},
+			{Text: "", Widget: NewBoldLabel(GroupsInfo)},
+			{Text: "Groups", Widget: container.NewGridWithColumns(3, s.groupSelect, s.btnSaveGroup, s.btnDeleteGroup)},
 			{Text: "Groupname", Widget: s.groupname},
 			{Text: "Phone", Widget: s.phone},
-			{Text: "",Widget: NewBoldLabel(MessageInfo)},
+			{Text: "", Widget: NewBoldLabel(MessageInfo)},
 			{Text: "Message", Widget: s.message},
 			{Text: "", Widget: s.btnSubmit},
 		},
 	}
-	m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 12)
+	m := ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 12)
 	s.logtext = &widget.Label{Text: m}
 	return container.NewScroll(
 		container.NewVBox(
@@ -117,7 +117,7 @@ func (s *theform) buildUI() *container.Scroll {
 }
 func (s *theform) Getphonesforgroup(v string) string {
 	var np string
-	dag:=new(pfdatabase.DBtype).ShowAllGroups()
+	dag := new(pfdatabase.DBtype).ShowAllGroups()
 	for i := 0; i < len(dag); i++ {
 		if dag[i][0] == v {
 			if np > "" {
@@ -129,7 +129,7 @@ func (s *theform) Getphonesforgroup(v string) string {
 	}
 	return np
 }
-func (s *theform) HandleSendsms(p, t, m string) {
+func (s *theform) HandleSendsms(p, groupname, msg string) {
 	// split phone into \r\n and ","
 	ph := s.phone.Text
 	ph = strings.Replace(ph, "\r", ",", -1)
@@ -146,18 +146,15 @@ func (s *theform) HandleSendsms(p, t, m string) {
 	countrycode := fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
 	for i := 0; i < len(p1); i++ {
 		p1[i] = Fixphonenumber(p1[i], countrycode)
-		if strings.Contains(m, "<<Fname>>") || strings.Contains(m, "<<Lname>>") {
-			db := *new(pfdatabase.DBtype)
-			p1[i] = p1[i] + "\t" + db.GetFname(p1[i]) + "\t" + db.GetLname(p1[i])
-		}
+		p1[i] += "\t" + new(pfdatabase.DBtype).GetFname(p1[i]) + "\t" + new(pfdatabase.DBtype).GetLname(p1[i])
 	}
-	result := new(pfmobile.SMStype).SendMessage(p1, m)
+	result := new(pfmobile.SMStype).SendMessage(p1, msg)
 	if result != nil {
 		log.Println("Sent messages ok")
 		var sh [][]string
-		for i:=0;i<len(result);i++ {
-		// result = tstamp, phone, message
-			sh = append(sh,[]string{result[i][0],s.groupSelect.Selected,result[i][1],result[i][2]})
+		for i := 0; i < len(result); i++ {
+			// result = tstamp, phone, message
+			sh = append(sh, []string{result[i][0], groupname, result[i][1], result[i][2]})
 		}
 		new(pfdatabase.DBtype).SaveHistory(sh)
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 12)

@@ -20,24 +20,24 @@ import (
 )
 
 type SMStype struct {
-	mydebug 	bool
-	Comport 	string 
-	timeout 	time.Duration
-	starttime 	time.Time
-	port		serial.Port
-	Addhash		bool
+	mydebug   bool
+	Comport   string
+	timeout   time.Duration
+	starttime time.Time
+	port      serial.Port
+	Addhash   bool
 }
 
 func (s *SMStype) SendMessage(phonenumbers []string, message string) [][]string {
 	// Replace with the correct serial port of the modem
 	s.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobilePort", "COM2")
-	s.Addhash=fyne.CurrentApp().Preferences().Bool("addHash")
-	
+	s.Addhash = fyne.CurrentApp().Preferences().Bool("addHash")
+
 	var sendtext, phoneNumber string
 	var failures, success int
 	var result [][]string
 	var err error
-	s.mydebug= true
+	s.mydebug = true
 	// s.Setuplog()
 	s.starttime = time.Now()
 	s.timeout = time.Millisecond * 700
@@ -56,10 +56,10 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) [][]string 
 	message = strings.TrimSpace(message)
 	log.Printf("Got %d phonenumbers to send ok.\r\n", len(phonenumbers))
 	for i, record := range phonenumbers {
-		rec:=strings.Split(record,"\t")
+		rec := strings.Split(record, "\t")
 		phoneNumber = rec[0]
-		sendtext=message
-		if strings.Contains(sendtext,"<<Fname>>") || strings.Contains(sendtext,"<<Lname>>") {
+		sendtext = message
+		if strings.Contains(sendtext, "<<Fname>>") || strings.Contains(sendtext, "<<Lname>>") {
 			sendtext = strings.Replace(sendtext, "<<Fname>>", rec[1], -1)
 			sendtext = strings.Replace(sendtext, "<<Lname>>", rec[2], -1)
 		}
@@ -71,12 +71,12 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) [][]string 
 			sentok = s.SendSMS(phoneNumber, sendtext)
 			if !sentok {
 				log.Println("--------------------SENDSMS FAILED")
-				modemresetfail:=0
-				for !s.Modemreset() && modemresetfail<10 {
-					log.Println("--------------------MODEMRESET FAIL: ",modemresetfail)
+				modemresetfail := 0
+				for !s.Modemreset() && modemresetfail < 10 {
+					log.Println("--------------------MODEMRESET FAIL: ", modemresetfail)
 					modemresetfail++
 				}
-				if modemresetfail>8 {
+				if modemresetfail > 8 {
 					return nil
 				}
 				log.Println("--------------------MODEMRESET OK")
@@ -85,16 +85,16 @@ func (s *SMStype) SendMessage(phonenumbers []string, message string) [][]string 
 		}
 		success++
 		log.Printf("Message %d/%d to phone %s sent! (failures: %d)\r\n", i+1, len(phonenumbers), phoneNumber, failures)
-		tstamp:=time.Now().Format("200601012150405")
-		result =append(result,[]string{tstamp,phoneNumber,sendtext})
+		tstamp := time.Now().Format("200601012150405")
+		result = append(result, []string{tstamp, phoneNumber, sendtext})
 		if !s.mydebug {
 			log.Printf("%s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber, failures)
 		}
 	}
 	log.Printf("RESULT OF SMS SENDING: Failures: %d Success: %d\r\n", failures, success)
-	s1:=s.starttime.Format("2006-01-02 15:04:05")
-	s2:=time.Now().Format("2006-01-02 15:04:05")
-	log.Printf("Started: %s  Finished: %s  Duration: %s\r\n",s1 , s2, time.Since(s.starttime))
+	s1 := s.starttime.Format("2006-01-02 15:04:05")
+	s2 := time.Now().Format("2006-01-02 15:04:05")
+	log.Printf("Started: %s  Finished: %s  Duration: %s\r\n", s1, s2, time.Since(s.starttime))
 	log.Printf("Speed: %ds/sms\r\n", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
 	s.port.Close()
 	return result
@@ -127,7 +127,7 @@ func (s SMStype) Modemreset() bool {
 	s.port.Write([]byte("AT+CMGF=0\r\n")) // Set PDU mode
 	r += myread(s.port)
 	// if mydebug {
-		log.Println("MODEMRESET: ", showdebugmsg(r))
+	log.Println("MODEMRESET: ", showdebugmsg(r))
 	// }
 	if strings.Contains(strings.ToUpper(r), "ERROR") || !strings.Contains(r, "OK") || len(r) == 0 {
 		return false
@@ -262,7 +262,7 @@ func slowwrite(port serial.Port, s string) {
 	port.Drain()
 }
 func (s SMStype) GetPortsList() ([]string, error) {
-		return serial.GetPortsList()
+	return serial.GetPortsList()
 }
 func showdebugmsg(s string) string {
 	r2 := s
