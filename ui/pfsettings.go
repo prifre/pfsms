@@ -26,7 +26,7 @@ type pfsettings struct {
 	mobileNumber  *widget.Entry
 	mobileCountry *widget.Select
 	mobileModel   *widget.Select
-	mobilePort    *widget.Select
+	mobilePort    *widget.Entry
 	mobileAddhash *widget.Check
 	btnTestSMS    *widget.Button
 
@@ -51,18 +51,19 @@ func NewSettings(w fyne.Window) *pfsettings {
 }
 func (s *pfsettings) buildMobilePart() *fyne.Container {
 	var mobileContainer *fyne.Container
+	var err error
+	var portslist []string
 	s.mobileNumber = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
 		fyne.CurrentApp().Preferences().SetString("mobilenumber", s.mobileNumber.Text)
 	}}
 	var sms pfmobile.SMStype = *new(pfmobile.SMStype)
-	p, err := sms.GetPortsList()
+	portslist, err = sms.GetPortsList()
 	if err != nil {
 		log.Print("settings.buildUI #1 GetPortsList Error")
 	}
-	s.mobilePort = &widget.Select{Options: p, OnChanged: func(sel string) {
-		fyne.CurrentApp().Preferences().SetString("mobilePort", sel)
-	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobilePort", ""),
-	}
+	s.mobilePort = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobileport", ""), OnChanged: func(v string) {
+		fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
+	}}
 	s.mobileModel = &widget.Select{Options: mobilemodels, OnChanged: func(sel string) {
 		fyne.CurrentApp().Preferences().SetString("mobileModel", sel)
 	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobileModel", ""),
@@ -91,7 +92,7 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		NewBoldLabel("Your Phone Number"), s.mobileNumber,
 		NewBoldLabel("Your Country"), s.mobileCountry,
 		NewBoldLabel("Your Phone Model"), s.mobileModel,
-		NewBoldLabel("Your Computer Port"), s.mobilePort,
+		NewBoldLabel("Your Computer Port ("+strings.Join(portslist,", ")+")"), s.mobilePort,
 		NewBoldLabel("Add some numbering into messages"), s.mobileAddhash,
 		NewBoldLabel("Test mobile settings"), s.btnTestSMS,
 	)
@@ -103,13 +104,21 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 
 	// Open Data directory!
 	s.btnOpenDatadir = &widget.Button{Text: "Click to open data directory.", OnTapped: func() {
-		dd := GetHomeDir()
-		if runtime.GOOS == "darwin" {
-			cmd := `open "` + dd + `"`
-			exec.Command("/bin/bash", "-c", cmd).Start()
-		} else {
-			exec.Command("explorer", dd).Start()
+		path := GetHomeDir()
+		var cmd *exec.Cmd
+		switch runtime.GOOS {
+		case "linux":
+			// You can change "xdg-open" to your specific file manager if needed
+			cmd = exec.Command("xdg-open", path)
+		case "darwin":
+			cmd = exec.Command("open", path) // For macOS
+		case "windows":
+			cmd = exec.Command("explorer", path) // For Windows
+		default:
+			log.Println("#1 buildFilePart unsupported operating system")
 		}
+		// Run the command
+		cmd.Start()
 	}}
 	// Customers ImportExport
 	s.btnImportCustomers = &widget.Button{Text: "Import Customers", OnTapped: func() {
@@ -147,15 +156,25 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 		log.Println("Exported History")
 	}}
 	s.btnOpenLog = &widget.Button{Text: "Open Log", OnTapped: func() {
-		dd := fyne.CurrentApp().Preferences().String("pfsmslog")
+		path := fyne.CurrentApp().Preferences().String("pfsmslog")
 		// dd,_:=os.UserHomeDir()
 		// dd = fmt.Sprintf("%s%c%s%c%s",dd,os.PathSeparator,"pfsms",os.PathSeparator,fn)
-		if runtime.GOOS == "darwin" {
-			cmd := `open "` + dd + `"`
-			exec.Command("/bin/bash", "-c", cmd).Start()
-		} else {
-			exec.Command("explorer", dd).Start()
+		var cmd *exec.Cmd
+
+		// Determine the operating system
+		switch runtime.GOOS {
+		case "linux":
+			// You can change "xdg-open" to your specific file manager if needed
+			cmd = exec.Command("xdg-open", path)
+		case "darwin":
+			cmd = exec.Command("open", path) // For macOS
+		case "windows":
+			cmd = exec.Command("explorer", path) // For Windows
+		default:
+			log.Println("#2 buildFilePart unsupported operating system")
 		}
+		// Run the command
+		cmd.Start()
 	}}
 	s.logfile= &widget.Label{Text: fyne.CurrentApp().Preferences().String("pfsmslog")}
 	s.historyfile= &widget.Label{Text: fyne.CurrentApp().Preferences().String("historyfile")}

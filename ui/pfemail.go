@@ -15,6 +15,7 @@ import (
 type theemail struct {
 	btnStart			*widget.Button
 	btnCheck			*widget.Button
+	btnWaitmode			*widget.Button
 
 	useEmail	     	*widget.RadioGroup
 	emailServer  		*widget.Entry
@@ -63,6 +64,7 @@ func (s *theemail) buildUI() *container.Scroll {
 	s.emailPassword = &widget.Entry{Text:p,OnChanged: func(v string) {
 		s.setPassword(s.emailPassword.Text)
 	}}
+	s.emailPassword.Password=true
 	s.emailFLabel = &widget.Label{Text:
 		fmt.Sprintf("Email frequency (%d min)",int(fyne.CurrentApp().Preferences().FloatWithFallback("eFrequency",10))),
 		 TextStyle: fyne.TextStyle{Bold: true}}
