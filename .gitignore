@@ -1,6 +1,7 @@
+.githubexclude
 data
 documentation
 old
 __de*
-.githubexclude
 pfsms
+pfsmsdata
