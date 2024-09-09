@@ -17,10 +17,7 @@ import (
 	"github.com/prifre/pfsms/pfmobile"
 )
 
-var (
-	onOffOptions = []string{"On", "Off"}
-	mobilemodels = []string{"Samsung S24", "Samsung S9"}
-)
+var mobilemodels = []string{"Samsung S24", "Samsung S9"}
 
 type pfsettings struct {
 	mobileNumber  *widget.Entry
@@ -34,9 +31,11 @@ type pfsettings struct {
 	customersfile      *widget.Label
 	btnImportCustomers *widget.Button
 	btnExportCustomers *widget.Button
+	btnDeleteCustomers *widget.Button
 	groupsfile         *widget.Label
 	btnImportGroups    *widget.Button
 	btnExportGroups    *widget.Button
+	btnDeleteGroups    *widget.Button
 	logfile            *widget.Label
 	historyfile        *widget.Label
 	btnExportHistory   *widget.Button
@@ -54,7 +53,7 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 	var err error
 	var portslist []string
 	s.mobileNumber = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
-		fyne.CurrentApp().Preferences().SetString("mobilenumber", s.mobileNumber.Text)
+		fyne.CurrentApp().Preferences().SetString("mobilenumber", v)
 	}}
 	var sms pfmobile.SMStype = *new(pfmobile.SMStype)
 	portslist, err = sms.GetPortsList()
@@ -62,20 +61,20 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		log.Print("settings.buildUI #1 GetPortsList Error")
 	}
 	s.mobilePort = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobileport", ""), OnChanged: func(v string) {
-		fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
+		fyne.CurrentApp().Preferences().SetString("mobileport", v)
 	}}
 	s.mobileModel = &widget.Select{Options: mobilemodels, OnChanged: func(sel string) {
-		fyne.CurrentApp().Preferences().SetString("mobileModel", sel)
-	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobileModel", ""),
+		fyne.CurrentApp().Preferences().SetString("mobilemodel", sel)
+	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobilemodel", ""),
 	}
 	allcountries := GetAllCountries()
 	s.mobileCountry = &widget.Select{Options: allcountries, OnChanged: func(sel string) {
-		fyne.CurrentApp().Preferences().SetString("moileCountry", sel)
-	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden (+46)"),
+		fyne.CurrentApp().Preferences().SetString("moilemountry", sel)
+	}, Selected: fyne.CurrentApp().Preferences().StringWithFallback("mobilemountry", "Sweden (+46)"),
 	}
 	s.mobileAddhash = &widget.Check{Text: "Add '#=' and messagenumber to end of sent messages",
-		OnChanged: func(sel bool) { fyne.CurrentApp().Preferences().SetBool("addHash", sel) },
-		Checked:   fyne.CurrentApp().Preferences().Bool("addHash")}
+		OnChanged: func(sel bool) { fyne.CurrentApp().Preferences().SetBool("addhash", sel) },
+		Checked:   fyne.CurrentApp().Preferences().Bool("addhash")}
 	s.btnTestSMS = &widget.Button{Text: "Click to send a test sms message to yourself.", OnTapped: func() {
 		t := time.Now().Format("2006-01-02 15:04:05")
 		testmessage := fmt.Sprintf("This is a short testmessage, sent %s", t)
@@ -83,7 +82,7 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		pn = Fixphonenumber(pn, s.mobileCountry.Selected)
 		var sms pfmobile.SMStype = *new(pfmobile.SMStype)
 		sms.Addhash = fyne.CurrentApp().Preferences().Bool("addHash")
-		sms.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobilePort", "COM2")
+		sms.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobileport", "COM2")
 		sms.SendMessage([]string{pn}, testmessage)
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
@@ -129,6 +128,10 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 		new(pfdatabase.DBtype).ExportCustomers(fyne.CurrentApp().Preferences().String("customersfile"))
 		log.Println("Exported Customers")
 	}}
+	s.btnDeleteCustomers = &widget.Button{Text: "Delete Customers", OnTapped: func() {
+		new(pfdatabase.DBtype).DeleteCustomers()
+		log.Println("Deleted Customers")
+	}}
 	s.customersfile = &widget.Label{Text: fyne.CurrentApp().Preferences().String("customersfile")}
 
 	// Groups ImportExport
@@ -147,6 +150,10 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 		fn := fyne.CurrentApp().Preferences().StringWithFallback("groupsfile", fyne.CurrentApp().Preferences().String("groupsfile"))
 		new(pfdatabase.DBtype).ExportGroups(fn)
 		log.Println("Exported Groups")
+	}}
+	s.btnDeleteGroups = &widget.Button{Text: "Delete Groups", OnTapped: func() {
+		new(pfdatabase.DBtype).DeleteGroups()
+		log.Println("Deleted Groups")
 	}}
 	s.groupsfile = &widget.Label{Text: fyne.CurrentApp().Preferences().String("groupsfile")}
 
@@ -181,8 +188,8 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 
 	fileContainer = container.NewGridWithColumns(2,
 		NewBoldLabel("Location of default datafiles and textfiles:"), s.btnOpenDatadir,
-		container.NewGridWithColumns(2, s.btnExportCustomers, s.btnImportCustomers), s.customersfile,
-		container.NewGridWithColumns(2, s.btnExportGroups, s.btnImportGroups), s.groupsfile,
+		container.NewGridWithColumns(3, s.btnExportCustomers, s.btnImportCustomers, s.btnDeleteCustomers), s.customersfile,
+		container.NewGridWithColumns(3, s.btnExportGroups, s.btnImportGroups, s.btnDeleteGroups), s.groupsfile,
 		container.NewGridWithColumns(1, s.btnExportHistory), s.historyfile,
 		container.NewGridWithColumns(1,  s.btnOpenLog), s.logfile,
 	)

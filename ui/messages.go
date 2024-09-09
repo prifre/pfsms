@@ -36,8 +36,10 @@ func (s *theform) buildUI() *container.Scroll {
 	s.phone = widget.NewMultiLineEntry()
 	s.phone.Wrapping = fyne.TextWrap(fyne.TextWrapWord)
 	s.phone.SetMinRowsVisible(6)
+	s.phone.Text = fyne.CurrentApp().Preferences().String("messagephone")
 	s.message = &widget.Entry{}
 	s.message = widget.NewMultiLineEntry()
+	s.message.Text = fyne.CurrentApp().Preferences().String("message")
 	s.message.Wrapping = fyne.TextWrap(fyne.TextWrapWord)
 	s.message.SetMinRowsVisible(8)
 	s.btnSubmit = &widget.Button{Text: "Click to send message", OnTapped: func() {
@@ -143,7 +145,7 @@ func (s *theform) HandleSendsms(p, groupname, msg string) {
 		}
 	}
 	p1 := strings.Split(ph2, ",")
-	countrycode := fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
+	countrycode := fyne.CurrentApp().Preferences().StringWithFallback("mobilecountry", "Sweden(+46)")
 	for i := 0; i < len(p1); i++ {
 		p1[i] = Fixphonenumber(p1[i], countrycode)
 		p1[i] += "\t" + new(pfdatabase.DBtype).GetFname(p1[i]) + "\t" + new(pfdatabase.DBtype).GetLname(p1[i])
@@ -157,7 +159,7 @@ func (s *theform) HandleSendsms(p, groupname, msg string) {
 			sh = append(sh, []string{result[i][0], groupname, result[i][1], result[i][2]})
 		}
 		new(pfdatabase.DBtype).SaveHistory(sh)
-		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 12)
+		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 8)
 		s.logtext.Refresh()
 	}
 }

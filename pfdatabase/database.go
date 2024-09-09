@@ -190,10 +190,12 @@ func (db *DBtype) ImportCustomers(frfile string) {
 			}
 		}
 		if cnt > "0" {
-			continue
+			sq = "UPDATE tblCustomers SET phone='%s',firstname='%s',lastname='%s',note='%s' WHERE phone ='%s'"
+			sq = fmt.Sprintf(sq, phone, firstname, lastname, note,phone)
+		} else {
+			sq = "INSERT INTO tblCustomers (phone,firstname,lastname,note)  VALUES ('%s','%s','%s','%s')"
+			sq = fmt.Sprintf(sq, phone, firstname, lastname, note)
 		}
-		sq = "INSERT INTO tblCustomers (phone,firstname,lastname,note)"
-		sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", phone, firstname, lastname, note)
 		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 		if err != nil {
 			log.Println("#3 ImportCustomers prepare failed: ", sq, " ", err.Error())
@@ -242,6 +244,23 @@ func (db *DBtype) ExportCustomers(tofile string) {
 	if err != nil {
 		log.Println("#3 ExportCustomers WriteFile ", err.Error())
 	}
+}
+func (db *DBtype) DeleteCustomers() {
+	var sq string
+	var err error
+	db.Opendb()
+	sq = "DELETE FROM tblCustomers;"
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 DeleteCustomers Prepare DELETE", err.Error())
+		return
+	}
+	_, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		log.Println("#2 ImportCustomers Failed DELETE tblGroups")
+		return
+	}
+	db.Closedatabase()
 }
 func (db *DBtype) ShowGroups() []string {
 	// should show all available groupnames
@@ -341,16 +360,6 @@ func (db *DBtype) ImportGroups(b string) {
 	var sq string
 	var err error
 	db.Opendb()
-	sq = "DELETE FROM tblGroups;"
-	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
-	if err != nil {
-		log.Println("#1 ImportGroups Prepare DELETE", err.Error())
-		return
-	}
-	_, err = db.statement.Exec() // Execute SQL Statements
-	if err != nil {
-		log.Println("#2 ImportGroups Failed DELETE tblGroups")
-	}
 	b = Removebadsqlcharacters(b)
 	for i := 0; i < len(strings.Split(b, "\r")); i++ {
 		b1 := strings.Split(b, "\r")[i]
@@ -374,6 +383,23 @@ func (db *DBtype) ImportGroups(b string) {
 			log.Println("#4 ImportGroups Exec ", err.Error())
 			return
 		}
+	}
+	db.Closedatabase()
+}
+func (db *DBtype) DeleteGroups() {
+	var sq string
+	var err error
+	db.Opendb()
+	sq = "DELETE FROM tblGroups;"
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 DeleteGroups Prepare DELETE", err.Error())
+		return
+	}
+	_, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		log.Println("#2 ImportGroups Failed DELETE tblGroups")
+		return
 	}
 	db.Closedatabase()
 }
@@ -529,7 +555,7 @@ func (db *DBtype) GetLname(phone string) string {
 func Fixphonenumber(pn string) string {
 	// pn phonenumber  cc coutrycode
 	// Sweden (+46) converts to 0046
-	cc := fyne.CurrentApp().Preferences().StringWithFallback("mobileCountry", "Sweden(+46)")
+	cc := fyne.CurrentApp().Preferences().StringWithFallback("mobilecountry", "Sweden(+46)")
 	var cci string = "00"
 	for i := 0; i < len(cc); i++ {
 		if strings.Index("0123456789", string(cc[i])) > 0 {

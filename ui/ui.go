@@ -13,7 +13,7 @@ func Create(window fyne.Window) *container.AppTabs {
 	var tabs []*container.TabItem =  []*container.TabItem{
 		NewTable(window).tabItem(),
 		NewMessages(window).tabItem(),
-		NewEmail(window).tabItem(),
+		// NewEmail(window).tabItem(),
 		NewSettings(window).tabItem(),
 		NewAbout(window).tabItem(),
 	}
@@ -24,12 +24,12 @@ func Create(window fyne.Window) *container.AppTabs {
 			tabs[0]=NewTable(window).tabItem()
 		case "Messages":
 			tabs[1]=NewMessages(window).tabItem()
-		case "Email":
-			tabs[2]=NewEmail(window).tabItem()
+		// case "Email":
+		// 	tabs[2]=NewEmail(window).tabItem()
 		case "Settings":
-			tabs[3]=NewSettings(window).tabItem()
+			tabs[2]=NewSettings(window).tabItem()
 		case "About pfsms":
-			tabs[4]=NewAbout(window).tabItem()
+			tabs[3]=NewAbout(window).tabItem()
 		default:
 		}
 	}

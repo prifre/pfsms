@@ -106,9 +106,10 @@ func TestCreateLongPDU2(t *testing.T) {
 	fmt.Println("ALL CreateLongPDU tests OK!!!!!!!!!!!")
 }
 func TestSendMessage(t *testing.T) {
-	p :=[]string{"0736290839","0736290839"}
-	msg :="This is a test!"
-	s := new(SMStype)
-	s.Comport="COM3"
-	s.SendMessage(p,msg)
+	// p :=[]string{"0736290839","0736290839"}
+	// msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	SendSMS("COM3","0046736290839", "test")
 }

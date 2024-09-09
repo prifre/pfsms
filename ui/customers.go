@@ -2,6 +2,7 @@ package ui
 
 // show database with Customers & Grops
 import (
+	"slices"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -67,12 +68,14 @@ func (s *thetable) buildTableGroups() *container.Scroll {
 	}
 	s.tableGroups.OnSelected=func(i widget.TableCellID) {
 		var tc [][]string = nil
+		var ingroup []string
 		for j:=0;j<len(s.dataAllGroups);j++ {
 			if s.dataGroups[i.Row] == s.dataAllGroups[j][0] {
 				for k:=0;k<len(s.dataAllCustomers);k++ {
 					gp:=s.dataAllGroups[j][1]
 					cp:=s.dataAllCustomers[k][0]
-					if gp == cp {
+					if gp == cp && slices.Index(ingroup,cp)==-1 {
+						ingroup = append(ingroup,cp)
 						tc=append(tc,s.dataAllCustomers[k])
 					}
 				}

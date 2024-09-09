@@ -1,2 +1,172 @@
 2024/08/20 23:30:04 #1 Setupdb database not found, creating new db: C:\dev\go\src\pfsms\pfsmsdata\pfsms.db
 2024/08/20 23:30:04 Database tables created
+2024/08/30 09:09:58 Got 1 phonenumbers to send ok.
+2024/08/30 09:09:59 ERROR #1: no '>' in part 0: 
+2024/08/30 09:09:59 --------------------SENDSMS FAILED
+2024/08/30 09:10:05 MODEMRESET:  
+2024/08/30 09:10:05 --------------------MODEMRESET FAIL:  0
+2024/08/30 09:10:12 MODEMRESET:  
+2024/08/30 09:10:12 --------------------MODEMRESET FAIL:  1
+2024/08/30 09:10:19 MODEMRESET:  
+2024/08/30 09:10:19 --------------------MODEMRESET FAIL:  2
+2024/08/30 09:10:26 MODEMRESET:  
+2024/08/30 09:10:26 --------------------MODEMRESET FAIL:  3
+2024/08/30 09:10:32 MODEMRESET:  
+2024/08/30 09:10:32 --------------------MODEMRESET FAIL:  4
+2024/08/30 09:10:39 MODEMRESET:  
+2024/08/30 09:10:39 --------------------MODEMRESET FAIL:  5
+2024/08/30 09:10:46 MODEMRESET:  
+2024/08/30 09:10:46 --------------------MODEMRESET FAIL:  6
+2024/08/31 00:20:49 Got 1 phonenumbers to send ok.
+2024/08/31 00:20:56 --------------------SENDSMS FAILED
+2024/08/31 00:20:56 #1 serial.Open(comport)Serial port busy
+2024/08/31 00:21:44 Got 1 phonenumbers to send ok.
+2024/08/31 00:21:51 --------------------SENDSMS FAILED
+2024/08/31 00:21:51 #1 serial.Open(comport)Serial port busy
+2024/08/31 00:24:41 Got 1 phonenumbers to send ok.
+2024/08/31 00:24:48 --------------------SENDSMS FAILED
+2024/08/31 00:24:48 #1 serial.Open(comport)Serial port busy
+2024/08/31 00:25:24 Got 1 phonenumbers to send ok.
+2024/08/31 00:25:32 --------------------SENDSMS FAILED
+2024/08/31 00:25:32 #1 serial.Open(comport)Serial port busy
+2024/08/31 00:31:51 Got 1 phonenumbers to send ok.
+2024/08/31 00:31:58 --------------------SENDSMS FAILED
+2024/08/31 00:31:58 #1 serial.Open(comport)Serial port busy
+2024/08/31 00:34:02 Got 1 phonenumbers to send ok.
+2024/08/31 00:35:03 Got 1 phonenumbers to send ok.
+2024/08/31 00:38:03 --------------------SENDSMS FAILED
+2024/08/31 00:39:01 Got 1 phonenumbers to send ok.
+2024/08/31 00:39:42 --------------------SENDSMS FAILED
+2024/08/31 00:49:26 Got 1 phonenumbers to send ok.
+2024/08/31 00:49:32 --------------------SENDSMS FAILED
+2024/08/31 00:50:47 --------------------MODEMRESET FAIL:  0
+2024/08/31 00:55:21 Got 1 phonenumbers to send ok.
+2024/08/31 00:55:54 Message 1/1 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:55:54 RESULT OF SMS SENDING: Failures: 0 Success: 1
+2024/08/31 00:55:54 Started: 2024-08-31 00:55:21  Finished: 2024-08-31 00:55:54  Duration: 32.712918s
+2024/08/31 00:55:54 Speed: 32s/sms
+2024/08/31 00:57:12 Got 1 phonenumbers to send ok.
+2024/08/31 00:57:15 Message 1/1 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:57:15 RESULT OF SMS SENDING: Failures: 0 Success: 1
+2024/08/31 00:57:15 Started: 2024-08-31 00:57:12  Finished: 2024-08-31 00:57:15  Duration: 2.8491463s
+2024/08/31 00:57:15 Speed: 2s/sms
+2024/08/31 00:57:33 Got 1 phonenumbers to send ok.
+2024/08/31 00:57:34 Message 1/1 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:57:34 RESULT OF SMS SENDING: Failures: 0 Success: 1
+2024/08/31 00:57:34 Started: 2024-08-31 00:57:33  Finished: 2024-08-31 00:57:34  Duration: 1.560508s
+2024/08/31 00:57:34 Speed: 1s/sms
+2024/08/31 00:58:23 Got 3 phonenumbers to send ok.
+2024/08/31 00:58:25 Message 1/3 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:58:26 Message 2/3 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:58:28 Message 3/3 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:58:28 RESULT OF SMS SENDING: Failures: 0 Success: 3
+2024/08/31 00:58:28 Started: 2024-08-31 00:58:23  Finished: 2024-08-31 00:58:28  Duration: 4.826867s
+2024/08/31 00:58:28 Speed: 1s/sms
+2024/08/31 00:58:28 Sent messages ok
+2024/08/31 00:59:41 Got 4 phonenumbers to send ok.
+2024/08/31 00:59:42 Message 1/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:59:43 Message 2/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:59:44 Message 3/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:59:45 Message 4/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 00:59:45 RESULT OF SMS SENDING: Failures: 0 Success: 4
+2024/08/31 00:59:45 Started: 2024-08-31 00:59:41  Finished: 2024-08-31 00:59:45  Duration: 3.672747s
+2024/08/31 00:59:45 Speed: 0s/sms
+2024/08/31 00:59:45 Sent messages ok
+2024/08/31 01:00:05 Got 4 phonenumbers to send ok.
+2024/08/31 01:00:11 Message 1/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:00:17 Message 2/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:00:23 Message 3/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:00:29 Message 4/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:00:29 RESULT OF SMS SENDING: Failures: 0 Success: 4
+2024/08/31 01:00:29 Started: 2024-08-31 01:00:05  Finished: 2024-08-31 01:00:29  Duration: 23.717662s
+2024/08/31 01:00:29 Speed: 5s/sms
+2024/08/31 01:00:29 Sent messages ok
+2024/08/31 01:01:42 Got 4 phonenumbers to send ok.
+2024/08/31 01:01:43 Message 1/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:01:44 Message 2/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:01:44 Message 3/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:01:45 Message 4/4 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:01:45 RESULT OF SMS SENDING: Failures: 0 Success: 4
+2024/08/31 01:01:45 Started: 2024-08-31 01:01:42  Finished: 2024-08-31 01:01:45  Duration: 2.1810405s
+2024/08/31 01:01:45 Speed: 0s/sms
+2024/08/31 01:01:45 Sent messages ok
+2024/08/31 01:03:40 Got 1 phonenumbers to send ok.
+2024/08/31 01:03:40 Message 1/1 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:03:40 RESULT OF SMS SENDING: Failures: 0 Success: 1
+2024/08/31 01:03:40 Started: 2024-08-31 01:03:40  Finished: 2024-08-31 01:03:40  Duration: 775.7739ms
+2024/08/31 01:03:40 Speed: 0s/sms
+2024/08/31 01:03:40 Sent messages ok
+2024/08/31 01:03:54 #1 ImportCustomers ReadFile open C:\dev\go\src\pfsms\pfsmsdata\customers.txt: The system cannot find the file specified.
+2024/08/31 01:03:54 Imported Customers
+2024/08/31 01:05:31 Got 1 phonenumbers to send ok.
+2024/08/31 01:05:32 Message 1/1 to phone 0046736290839 sent! (failures: 0)
+2024/08/31 01:05:32 RESULT OF SMS SENDING: Failures: 0 Success: 1
+2024/08/31 01:05:32 Started: 2024-08-31 01:05:31  Finished: 2024-08-31 01:05:32  Duration: 901.9194ms
+2024/08/31 01:05:32 Speed: 0s/sms
+2024/08/31 01:05:32 Sent messages ok
+2024/09/01 13:25:21 Imported 0 customers.
+2024/09/01 13:25:21 Imported Customers
+2024/09/01 13:25:52 Imported 0 customers.
+2024/09/01 13:25:52 Imported Customers
+2024/09/01 13:25:58 Imported 0 customers.
+2024/09/01 13:25:58 Imported Customers
+2024/09/01 13:26:04 Imported 0 customers.
+2024/09/01 13:26:04 Imported Customers
+2024/09/01 13:28:34 Imported Groups
+2024/09/01 13:32:09 Imported 1 customers.
+2024/09/01 13:32:09 Imported Customers
+2024/09/01 13:32:18 Imported 1 customers.
+2024/09/01 13:32:18 Imported Customers
+2024/09/01 13:43:06 Deleted Customers
+2024/09/01 13:43:11 Imported 1 customers.
+2024/09/01 13:43:11 Imported Customers
+2024/09/01 13:45:39 Fyne error:  Failed to set dark mode
+2024/09/01 13:45:39   Cause: The operation completed successfully.
+2024/09/01 13:45:39   At: C:/dev/go/pkg/mod/fyne.io/fyne/v2@v2.4.5/internal/driver/glfw/window_windows.go:27
+2024/09/01 14:15:36 Imported 8217 customers.
+2024/09/01 14:15:37 Imported Customers
+2024/09/01 14:16:26 Imported 13 customers.
+2024/09/01 14:16:26 Imported Customers
+2024/09/01 14:16:47 Deleted Groups
+2024/09/01 14:17:53 Imported Groups
+2024/09/01 14:19:54 Got 5 phonenumbers to send ok.
+2024/09/01 14:19:58 Message 1/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:20:01 Message 2/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:20:02 Message 3/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:20:04 Message 4/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:20:06 Message 5/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:20:06 RESULT OF SMS SENDING: Failures: 0 Success: 5
+2024/09/01 14:20:06 Started: 2024-09-01 14:19:54  Finished: 2024-09-01 14:20:06  Duration: 11.7771723s
+2024/09/01 14:20:06 Speed: 2s/sms
+2024/09/01 14:20:06 Sent messages ok
+2024/09/01 14:23:28 Got 5 phonenumbers to send ok.
+2024/09/01 14:23:35 Message 1/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:23:44 Message 2/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:23:52 Message 3/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:24:00 Message 4/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:24:07 Message 5/5 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:24:07 RESULT OF SMS SENDING: Failures: 0 Success: 5
+2024/09/01 14:24:07 Started: 2024-09-01 14:23:28  Finished: 2024-09-01 14:24:07  Duration: 39.6846611s
+2024/09/01 14:24:07 Speed: 7s/sms
+2024/09/01 14:24:07 Sent messages ok
+2024/09/01 14:36:52 Got 14 phonenumbers to send ok.
+2024/09/01 14:37:15 Message 1/14 to phone 0046732153043 sent! (failures: 0)
+2024/09/01 14:37:27 Message 2/14 to phone 0046730793385 sent! (failures: 0)
+2024/09/01 14:37:33 Message 3/14 to phone 0046708482748 sent! (failures: 0)
+2024/09/01 14:37:40 Message 4/14 to phone 0046708944349 sent! (failures: 0)
+2024/09/01 14:37:50 Message 5/14 to phone 0046702966838 sent! (failures: 0)
+2024/09/01 14:37:57 Message 6/14 to phone 0046739805158 sent! (failures: 0)
+2024/09/01 14:38:11 Message 7/14 to phone 0046730371604 sent! (failures: 0)
+2024/09/01 14:38:20 Message 8/14 to phone 0046736387259 sent! (failures: 0)
+2024/09/01 14:38:32 Message 9/14 to phone 0046736789807 sent! (failures: 0)
+2024/09/01 14:38:39 Message 10/14 to phone 0046709633603 sent! (failures: 0)
+2024/09/01 14:38:48 Message 11/14 to phone 0046737427574 sent! (failures: 0)
+2024/09/01 14:39:00 Message 12/14 to phone 0046709929760 sent! (failures: 0)
+2024/09/01 14:39:10 Message 13/14 to phone 0046704537771 sent! (failures: 0)
+2024/09/01 14:39:19 Message 14/14 to phone 0046736290839 sent! (failures: 0)
+2024/09/01 14:39:19 RESULT OF SMS SENDING: Failures: 0 Success: 14
+2024/09/01 14:39:19 Started: 2024-09-01 14:36:52  Finished: 2024-09-01 14:39:19  Duration: 2m27.3963265s
+2024/09/01 14:39:19 Speed: 10s/sms
+2024/09/01 14:39:19 Sent messages ok
+2024/09/01 14:41:04 Exported History
+2024/09/01 15:14:04 Exported History
