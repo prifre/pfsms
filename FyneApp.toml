@@ -4,5 +4,5 @@ Website = "https://sms.prifre.com"
 Name = "pfsms"
 ID = "pfsms"
 Icon = "ui/pfsms.png"
-Version = "v0.1.1"
-Build = 2
+Version = "v0.1.2"
+Build = 3

@@ -1,20 +1,12 @@
 Version info
 
-TODO:
-add debug on/off into settings
-setup webserver sms.prifre.com
-email unattended handling...
-document emailhandling
-but check for bugs - grouphandling!
-messags export/import/save?
-Checking for duplicate phonenumbers while saving Group
-button in Message "Check for that phonenumbers exists in Customer database"
-import/export messages
-export LOG, remove history...
+2024-09-09
+removed pfemail
+finalizing...
+added debughandling to pfmobile - red/write modem
 
-smslog..
-add debug yes/no to settings
-ONE LOG! (errors/email/sms)
+TODO:
+setup webserver sms.prifre.com
 
 LATEST TOP!
 2024-08-11
