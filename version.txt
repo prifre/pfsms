@@ -1,5 +1,13 @@
 Version info
 
+fixed width of app
+save mwessages
+fix CSCA = ... nop " error
+fix not debughandling
+handle feedback while sending!
+check Gorutines!
+
+
 2024-09-09
 removed pfemail
 finalizing...

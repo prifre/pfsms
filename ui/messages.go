@@ -31,28 +31,28 @@ func NewMessages(w fyne.Window) *theform {
 }
 func (s *theform) buildUI() *container.Scroll {
 	s.groupname = &widget.Entry{}
-	s.groupname.Text = ""
+	s.groupname.Text = fyne.CurrentApp().Preferences().StringWithFallback("groupname","")
+	s.groupname.OnChanged = func(v string) {
+		fyne.CurrentApp().Preferences().SetString("groupname",s.groupname.Text)
+	}
 	s.phone = &widget.Entry{}
 	s.phone = widget.NewMultiLineEntry()
 	s.phone.Wrapping = fyne.TextWrap(fyne.TextWrapWord)
 	s.phone.SetMinRowsVisible(6)
 	s.phone.Text = fyne.CurrentApp().Preferences().String("messagephone")
-	s.message = &widget.Entry{}
-	s.message = widget.NewMultiLineEntry()
-	s.message.Text = fyne.CurrentApp().Preferences().String("message")
-	s.message.Wrapping = fyne.TextWrap(fyne.TextWrapWord)
-	s.message.SetMinRowsVisible(8)
-	s.btnSubmit = &widget.Button{Text: "Click to send message", OnTapped: func() {
-		s.HandleSendsms(s.phone.Text, s.groupname.Text, s.message.Text)
-	}}
+	s.phone.OnChanged = func(v string) {
+		 fyne.CurrentApp().Preferences().SetString("messagephone",s.phone.Text)
+	}
 	s.dataAllGroups = new(pfdatabase.DBtype).ShowAllGroups()
 	s.groupSelect = &widget.Select{Options: new(pfdatabase.DBtype).ShowGroups(),
 		Selected: "",
 		OnChanged: func(v string) {
 			s.phone.Text = s.Getphonesforgroup(v)
-			s.groupname.Text = v
-			s.groupname.Refresh()
+			fyne.CurrentApp().Preferences().SetString("messagephone",s.phone.Text)
 			s.phone.Refresh()
+			s.groupname.Text = v
+			fyne.CurrentApp().Preferences().SetString("groupname",s.groupname.Text)
+			s.groupname.Refresh()
 		},
 	}
 	s.btnSaveGroup = &widget.Button{Text: "Save Group", OnTapped: func() {
@@ -98,6 +98,17 @@ func (s *theform) buildUI() *container.Scroll {
 	GroupsInfo := "To use multiple mobile numbers, separate them with commas or Enter.\r\n"
 	GroupsInfo += "Click Save Group to reuse in future."
 	MessageInfo := "To insert firstname and/or lastname, use <<Fname>> and <<Lname>> in message."
+	s.message = &widget.Entry{}
+	s.message = widget.NewMultiLineEntry()
+	s.message.Wrapping = fyne.TextWrap(fyne.TextWrapWord)
+	s.message.SetMinRowsVisible(8)
+	s.message.Text = fyne.CurrentApp().Preferences().String("message")
+	s.message.OnChanged = func (v string) {
+		fyne.CurrentApp().Preferences().SetString("message",s.message.Text)
+	}
+	s.btnSubmit = &widget.Button{Text: "Click to send message", OnTapped: func() {
+		s.HandleSendsms(s.phone.Text, s.groupname.Text, s.message.Text)
+	}}
 	s.form = &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
 			{Text: "", Widget: NewBoldLabel(GroupsInfo)},
@@ -111,6 +122,7 @@ func (s *theform) buildUI() *container.Scroll {
 	}
 	m := ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 12)
 	s.logtext = &widget.Label{Text: m}
+	s.form.Refresh()
 	return container.NewScroll(
 		container.NewVBox(
 			s.form,
