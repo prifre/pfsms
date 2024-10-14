@@ -489,29 +489,27 @@ func (db *DBtype) ExportHistory(tofile string) {
 		log.Println("#3 ExportHistory WriteFile ", err.Error())
 	}
 }
-func (db *DBtype) SaveHistory(result [][]string) {
+func (db *DBtype) SaveHistory(r []string) {
 	// resulting string with history from pfmobile = tstamp,phone,message
 	// message in \"\"
 	var sq string
 	var err error
 	db.Opendb()
-	for _, r := range result {
-		// tstamp := r[0]
-		// phone := r[1]
-		// groupname := r[2]
-		// message := r[3]
-		sq = "INSERT INTO tblHistory (tstamp,groupname,phone,message)"
-		sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", r[0], r[1], r[2], r[3])
-		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
-		if err != nil {
-			log.Println("#1 SaveHistory Prepare", err.Error())
-			return
-		}
-		db.reply, err = db.statement.Exec() // Execute SQL Statements
-		if err != nil {
-			log.Println("#2 SaveHistory Exec ", err.Error())
-			return
-		}
+	// tstamp := r[0]
+	// phone := r[1]
+	// groupname := r[2]
+	// message := r[3]
+	sq = "INSERT INTO tblHistory (tstamp,groupname,phone,message)"
+	sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", r[0], r[1], r[2], r[3])
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 SaveHistory Prepare", err.Error())
+		return
+	}
+	db.reply, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		log.Println("#2 SaveHistory Exec ", err.Error())
+		return
 	}
 	db.Closedatabase()
 }

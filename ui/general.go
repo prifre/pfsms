@@ -338,6 +338,9 @@ func Fixphonenumber(pn string, cc string) string {
 			cci += string(cc[i])
 		}
 	}
+	if len(pn)==0 {
+		return ""
+	}
 	if pn[0:2] == string("00") {
 		return pn
 	}
@@ -386,4 +389,18 @@ func ReadLastLineWithSeek(fn string, cnt int) string {
 		lines = lines[1:]
 	}
 	return lines
+}
+func ShowShortLines(s string) string {
+	var s3 string 
+	s1:=strings.Split(s,"\n")
+	for _,s2:=range(s1) {
+		if len(s2)>80 {
+			s2 = s2[:80]
+		}
+		if s3>"" {
+			s3 += "\n"
+		}
+		s3 += s2
+	}
+	return s3
 }

@@ -25,11 +25,6 @@ func TestGetphonesforgroup(t *testing.T) {
 }
 func TestSaveHistory(t *testing.T) {
 	Setupfiles()
-	var sh [][]string
-	sh =append(sh,[]string{"20240818121212","PETER FREUND","0046736290839","test"})
-	sh =append(sh,[]string{"20240818121212","PETER FREUND","0046736290839","test"})
-	sh =append(sh,[]string{"20240818121212","PETER FREUND","0046736290839","test"})
-	sh =append(sh,[]string{"20240818121212","PETER FREUND","0046736290839","test"})
-	sh =append(sh,[]string{"20240818121212","PETER FREUND","0046736290839","test"})
+	var sh []string =[]string{"20240818121212","PETER FREUND","0046736290839","test"}
 	new(pfdatabase.DBtype).SaveHistory(sh)
 }

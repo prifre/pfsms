@@ -43,33 +43,41 @@ func Modemreset(comport string) bool {
 
 	port.Break(time.Second)
 	r = ""
-
-	mywrite(port,string("AT+DEVCONINFO\r\n"))
-	r += myread(port,"OK")
-	mywrite(port, "AT+CGMM\r\n")
-	r += myread(port,"")
+	// mywrite(port,string("AT+DEVCONINFO\r\n"))
+	// r += myread(port,"OK")
+	// mywrite(port, "AT+CGMM\n")		//GET MODEL
+	// r += myread(port,"")
 	// model := myread(port)
 	// model += myread(port)
 	// model = strings.TrimSpace(model)
 	// fmt.Println("MODEL: ", model)
-	mywrite(port,"\032\r\n")
+	mywrite(port,"\032\n")
 	r += myread(port,"")
-	mywrite(port,"AT+CFUN=0\r\n")
+	mywrite(port,"AT+CFUN=0\n")
 	r += myread(port,"OK")
 	mywrite(port,"ATZ\r\n") // Reset modem
 	r += myread(port,"OK")
-	mywrite(port,"ATE0\r\n") // set echo on...
+	mywrite(port,"\032\r\n") // set echo on...
+	r += myread(port,"")
+	r=""
+	mywrite(port,"ATV1\r\n") // set echo on...
+	r += myread(port,"OK")
+	mywrite(port,"ATE0\r\n") // set verbose on...
+	r += myread(port,"OK")
+	mywrite(port,"AT\r\n") // 
 	r += myread(port,"OK")
 	mywrite(port,"AT+CFUN=1\r\n")
 	r += myread(port,"OK")
-	mywrite(port,"AT+CSCA=\"+46735480000 \"\r\n")
+	mywrite(port,"AT\r\n") // 
+	r += myread(port,"OK")
+	mywrite(port,"AT+CSCA=\"0046735480000\"\r\n")
 	r += myread(port,"OK")
 	mywrite(port,"AT\r\n")
 	r += myread(port,"OK")
-	mywrite(port, "AT+CSCA?\r\n")
-	r += myread(port,"OK")
-	mywrite(port, "AT+CREG?\r\n")
-	r += myread(port,"OK")
+	// mywrite(port, "AT+CSCA?\r\n")
+	// r += myread(port,"OK")
+	// mywrite(port, "AT+CREG?\r\n")
+	// r += myread(port,"OK")
 	mywrite(port, "AT\r\n")
 	r += myread(port,"OK")
 	mywrite(port,"AT+CMGF=0\r\n") // Set PDU mode
@@ -84,7 +92,6 @@ func Modemreset(comport string) bool {
 	// r should be "AT+CFUN=0,0\r\n\r\nOK\r\nAT+CMGF=0\r\nATE1\r\n\r\nOK\r\nAT+CFUN=1,0\r\n\r\nOK\r\n"?!
 	return true
 }
-
 func SendSMS(comport string, phoneNumber string, message string) bool {
 	var pduarray []string
 	var cmd1 []string
@@ -127,8 +134,8 @@ func SendSMS(comport string, phoneNumber string, message string) bool {
 			return false
 		}
 	}
-
 	port.Close()
+	time.Sleep(time.Second)
 	return true
 }
 func mywrite(port serial.Port,s string ) {
@@ -140,7 +147,7 @@ func mywrite(port serial.Port,s string ) {
 }
 func myread(port serial.Port,response string) string {
 	var r string
-	timeout:=time.Millisecond * 700
+	timeout:=time.Millisecond * 10
 	port.SetReadTimeout(timeout)
 	buff := make([]byte, 100)
 	startTime := time.Now()

@@ -1,10 +1,4 @@
 Version info
-
-fixed width of app
-save mwessages
-fix CSCA = ... nop " error
-fix not debughandling
-handle feedback while sending!
 check Gorutines!
 
 

@@ -14,7 +14,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
-	"github.com/prifre/pfsms/pfmobile"
 )
 
 var mobilemodels = []string{"Samsung S24", "Samsung S9"}
@@ -55,8 +54,7 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 	s.mobileNumber = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
 		fyne.CurrentApp().Preferences().SetString("mobilenumber", v)
 	}}
-	var sms pfmobile.SMStype = *new(pfmobile.SMStype)
-	portslist, err = sms.GetPortsList()
+	portslist, err = GetPortsList()
 	if err != nil {
 		log.Print("settings.buildUI #1 GetPortsList Error")
 	}
@@ -80,10 +78,10 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		testmessage := fmt.Sprintf("This is a short testmessage, sent %s", t)
 		pn := fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", "")
 		pn = Fixphonenumber(pn, s.mobileCountry.Selected)
-		var sms pfmobile.SMStype = *new(pfmobile.SMStype)
+		var sms theform = *new(theform)
 		sms.Addhash = fyne.CurrentApp().Preferences().Bool("addHash")
 		sms.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobileport", "COM2")
-		sms.SendMessage([]string{pn}, testmessage)
+		sms.SendMessages([]string{pn}, testmessage)
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
 	}}

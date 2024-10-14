@@ -13,9 +13,9 @@ func main() {
 	a := app.NewWithID("pfsms")
 	w := a.NewWindow("pfsms")
 	wx=1024
-	wy=764
-	w.Resize(fyne.NewSize(wx,wy))
+	wy=768
 	w.Canvas().Content().Resize(fyne.NewSize(wx,wy))
-	w.SetContent(ui.Create( w))
+	w.Resize(fyne.NewSize(wx,wy))
+	w.SetContent(ui.Create(w))
 	w.ShowAndRun()
 }
