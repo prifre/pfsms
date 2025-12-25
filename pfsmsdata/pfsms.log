@@ -2177,3 +2177,9 @@ OK
 2024/10/14 14:52:52 READ: \r\n\r\n+CMGS: 130\r\n\r\nOK\r\n (?='OK')
 2024/10/14 14:52:53 Message 12/12 to phone 0046706019205 sent!
 2024/10/14 14:56:55 Exported History
+2025/12/25 20:02:49 Got 1 phonenumbers to send ok.
+2025/12/25 20:02:54 WROTE: \z\n
+2025/12/25 20:05:46 Got 1 phonenumbers to send ok.
+2025/12/25 20:05:51 WROTE: \z\n
+2025/12/25 20:14:47 Got 1 phonenumbers to send ok.
+2025/12/25 20:14:50 #2 WriteWithTimeout(port,"\032\n",time.Second*2)write timeout

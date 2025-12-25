@@ -30,6 +30,9 @@ func Modemreset(comport string) bool {
 	var port serial.Port
 	var r string
 	var err error
+	if TestPort(comport)==false {
+		return false
+	}
 	mode := &serial.Mode{
 		BaudRate: 115200,
 		Parity:   serial.NoParity,
@@ -37,10 +40,10 @@ func Modemreset(comport string) bool {
 		StopBits: serial.OneStopBit,
 	}
 	port, err = serial.Open(comport, mode)
+	port.SetReadTimeout(time.Second * 2)
 	if err != nil {
 		log.Fatal("#1 serial.Open(comport)", err)
 	}
-
 	port.Break(time.Second)
 	r = ""
 	// mywrite(port,string("AT+DEVCONINFO\r\n"))
@@ -138,11 +141,34 @@ func SendSMS(comport string, phoneNumber string, message string) bool {
 	time.Sleep(time.Second)
 	return true
 }
-func mywrite(port serial.Port,s string ) {
-	if fyne.CurrentApp().Preferences().Bool("debug") {
-		log.Printf("WROTE: %s\r\n",showdebugmsg(s))
+func WriteWithTimeout(port serial.Port, s string, timeout time.Duration) (int, error) {
+	type result struct {
+		n   int
+		err error
 	}
-	port.Write([]byte(s))
+	done := make(chan result, 1)
+
+	go func() {
+		n, err := port.Write([]byte(s))
+		done <- result{n, err}
+	}()
+
+	select {
+	case res := <-done:
+		return res.n, res.err
+	case <-time.After(timeout):
+		return 0, fmt.Errorf("write timeout")
+	}
+}
+func mywrite(port serial.Port,s string ) {
+	n,err:=port.Write([]byte(s))
+	if err!=nil {
+		log.Fatal(err)
+	}
+	if fyne.CurrentApp().Preferences().Bool("debug") {
+		log.Printf("WROTE: %s (%d bytes)\r\n",showdebugmsg(s),n)
+	}
+
 	port.Drain()
 }
 func myread(port serial.Port,response string) string {
@@ -259,4 +285,30 @@ func showdebugmsg(s string) string {
 }
 func GetPortsList() ([]string, error) {
 	return serial.GetPortsList()
+}
+func TestPort(comport string) bool {
+	var port serial.Port
+	var err error
+	var n int
+	mode := &serial.Mode{
+		BaudRate: 115200,
+		Parity:   serial.NoParity,
+		DataBits: 8,
+		StopBits: serial.OneStopBit,
+	}
+	port, err = serial.Open(comport, mode)
+	port.SetReadTimeout(time.Second * 2)
+	if err != nil {
+		log.Fatal("#1 serial.Open(comport)", err)
+	}
+	port.Break(time.Second)
+	// check port write possibility
+	n,err =WriteWithTimeout(port,"\032\n",time.Second*2)
+	if err!=nil || n==0 {
+		log.Println("#2 WriteWithTimeout(port,\"\\032\\n\",time.Second*2)", err)
+		port.Close()
+		return false
+	}
+	port.Close()
+	return true
 }
