@@ -81,6 +81,7 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		var sms theform = *new(theform)
 		sms.Addhash = fyne.CurrentApp().Preferences().Bool("addHash")
 		sms.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobileport", "COM2")
+		sms.groupname = &widget.Entry{Text:"settingstest"}
 		sms.SendMessages([]string{pn}, testmessage)
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()

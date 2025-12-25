@@ -1,6 +1,6 @@
 Version info
 check Gorutines!
-
+check why "not debug" does not send stuff... not work
 
 2024-09-09
 removed pfemail
