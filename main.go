@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	
 	var wx,wy float32
 	a := app.NewWithID("pfsms")
 	w := a.NewWindow("pfsms")
