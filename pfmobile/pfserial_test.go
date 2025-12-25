@@ -113,3 +113,15 @@ func TestSendMessage(t *testing.T) {
 	// s.SendMessage(p,msg)
 	SendSMS("COM3","0046736290839", "test")
 }
+func TestGetPortsList(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	// msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	s,err:=GetPortsList()
+	if err!=nil {
+		t.Fatalf("GetPortsList err=%v", err)
+	}
+	fmt.Printf("ports=%v\r\n", s)
+}
