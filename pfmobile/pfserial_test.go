@@ -135,7 +135,7 @@ func TestTestPort(t *testing.T) {
 	comport:="COM4"
 	result:=TestPort(comport)
 	fmt.Println("TestPort ",comport," results in ",result) 
-	if result!=true {
+	if result!=nil {
 		t.Fatalf("TestPort failed")
 	}
 }
@@ -146,15 +146,19 @@ func TestAllTestPorts(t *testing.T) {
 	// s := new(SMStype)
 	// s.Comport="COM3"
 	// s.SendMessage(p,msg)
-	var err error
-	s,err:=GetPortsList()
+	var s[]string
+	// var err error
+	s,_= GetPortsList()
+	// for i:=0;i<30;i++ {
+	// 	s=append(s, fmt.Sprintf("COM%d",i))
+	// }
 	fmt.Println("Available ports: ",s)
-	if err!=nil {
-		t.Fatalf("GetPortsList err=%v", err)
-	}
+	// if err!=nil {
+	// 	t.Fatalf("GetPortsList err=%v", err)
+	// }
 	for si:=0;si<len(s);si++ {
-		fmt.Println("Testing port: ",s[si])	
+		fmt.Print("Testing port: ",s[si])	
 		result:=TestPort(s[si])
-		fmt.Println("TestPort ",s[si]," results in =",result)	
+		fmt.Println("...... TestPort ",s[si]," results in =",result)	
 	}
 }

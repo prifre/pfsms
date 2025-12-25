@@ -15,6 +15,7 @@ package pfmobile
 // got it working with Samsung S24Ultra! speed 14s/sms using timeout = Millisecond*700
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -30,7 +31,7 @@ func Modemreset(comport string) bool {
 	var port serial.Port
 	var r string
 	var err error
-	if TestPort(comport)==false {
+	if TestPort(comport) != nil {
 		return false
 	}
 	mode := &serial.Mode{
@@ -286,7 +287,7 @@ func showdebugmsg(s string) string {
 func GetPortsList() ([]string, error) {
 	return serial.GetPortsList()
 }
-func TestPort(comport string) bool {
+func TestPort(comport string) error {
 	var port serial.Port
 	var err error
 	var n int
@@ -297,18 +298,27 @@ func TestPort(comport string) bool {
 		StopBits: serial.OneStopBit,
 	}
 	port, err = serial.Open(comport, mode)
-	port.SetReadTimeout(time.Second * 2)
 	if err != nil {
-		log.Fatal("#1 serial.Open(comport)", err)
+		return err // err.Error("#1 serial.Open(comport)")
 	}
-	port.Break(time.Second)
+	err= port.SetReadTimeout(time.Second * 2)
+	if err != nil {
+		return err //err.Error("#2 port.SetReadTimeout(time.Second * 2)")
+	}
+	err = port.Break(time.Second)
+	if err != nil {
+		return err //("#3 port.Break(time.Second)", err)
+	}
 	// check port write possibility
 	n,err =WriteWithTimeout(port,"\032\n",time.Second*2)
-	if err!=nil || n==0 {
-		log.Println("#2 WriteWithTimeout(port,\"\\032\\n\",time.Second*2)", err)
+	if err!=nil {
+		log.Println("#4 WriteWithTimeout(port,\"\\032\\n\",time.Second*2)", err)
 		port.Close()
-		return false
+		return err
+	}
+	if n==0 {
+		return errors.New("no bytes written to port")
 	}
 	port.Close()
-	return true
+	return nil
 }
