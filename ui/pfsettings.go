@@ -85,6 +85,10 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 	if err != nil {
 		log.Fatal("GetPortsList Error")
 	}
+	if !strings.Contains(strings.Join(portslist,", "),s.mobilePort.Text) {
+		s.mobilePort.Text = ""
+		fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
+}
 	mobileContainer = container.NewGridWithColumns(2,
 		NewBoldLabel("Your Phone Number"), s.mobileNumber,
 		NewBoldLabel("Your Country"), s.mobileCountry,

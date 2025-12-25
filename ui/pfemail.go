@@ -6,6 +6,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
 	"github.com/prifre/pfsms/pfemail"
@@ -178,6 +179,6 @@ func (s *theemail) setPassword(realPassword string) error {
 	fyne.CurrentApp().Preferences().SetString("epassword", prefPassword)
 	return err
 }
-// func (s *theemail) tabItem() *container.TabItem {
-// 	return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildUI()}
-// }
+func (s *theemail) tabItem() *container.TabItem {
+	return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildUI()}
+}
