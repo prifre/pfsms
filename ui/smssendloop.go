@@ -18,7 +18,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
-	"github.com/prifre/pfsms/pfserial"
+	"github.com/prifre/pfsms/pfmobile"
 )
 const loglines = 10
 type theform struct {

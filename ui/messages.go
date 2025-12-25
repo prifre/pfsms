@@ -8,36 +8,14 @@ package ui
 // got it working with Samsung S24Ultra! speed 14s/sms using timeout = Millisecond*700
 
 import (
-	"fmt"
-	"log"
 	"strings"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/prifre/pfsms/pfdatabase"
 )
 
-const loglines = 10
-type theform struct {
-	form           *widget.Form
-	phone          *widget.Entry
-	groupname      *widget.Entry
-	message        *widget.Entry
-	btnSaveGroup   *widget.Button
-	btnDeleteGroup *widget.Button
-	btnSubmit      *widget.Button
-	groupSelect    *widget.Select
-	dataAllGroups  [][]string
-	logtext        *widget.Label
-	window         fyne.Window
-	mydebug   bool
-	Comport   string
-	timeout   time.Duration
-	starttime time.Time
-	Addhash   bool
-}
 func NewMessages(w fyne.Window) *theform {
 	return &theform{window: w}
 }

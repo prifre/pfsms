@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
+	"github.com/prifre/pfsms/pfmobile"
 )
 
 var mobilemodels = []string{"Samsung S24", "Samsung S9"}
@@ -49,15 +50,9 @@ func NewSettings(w fyne.Window) *pfsettings {
 }
 func (s *pfsettings) buildMobilePart() *fyne.Container {
 	var mobileContainer *fyne.Container
-	var err error
-	var portslist []string
 	s.mobileNumber = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
 		fyne.CurrentApp().Preferences().SetString("mobilenumber", v)
 	}}
-	portslist, err = GetPortsList()
-	if err != nil {
-		log.Print("settings.buildUI #1 GetPortsList Error")
-	}
 	s.mobilePort = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobileport", ""), OnChanged: func(v string) {
 		fyne.CurrentApp().Preferences().SetString("mobileport", v)
 	}}
@@ -86,6 +81,10 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
 	}}
+	portslist, err := pfmobile.GetPortsList()
+	if err != nil {
+		log.Fatal("GetPortsList Error")
+	}
 	mobileContainer = container.NewGridWithColumns(2,
 		NewBoldLabel("Your Phone Number"), s.mobileNumber,
 		NewBoldLabel("Your Country"), s.mobileCountry,
