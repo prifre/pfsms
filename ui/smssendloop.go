@@ -19,7 +19,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
 	"github.com/prifre/pfsms/pfmobile"
-	"go.bug.st/serial"
 )
 const loglines = 10
 type theform struct {
@@ -146,8 +145,4 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		log.Printf("Speed: %ds/sms\r\n", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
 	}
 	return result
-}
-
-func GetPortsList() ([]string, error) {
-	return serial.GetPortsList()
 }

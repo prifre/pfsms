@@ -257,3 +257,6 @@ func showdebugmsg(s string) string {
 	r2 = strings.Replace(r2, string(rune(26)), "\\z", -1)
 	return r2
 }
+func GetPortsList() ([]string, error) {
+	return serial.GetPortsList()
+}
