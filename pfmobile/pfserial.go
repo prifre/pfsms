@@ -27,13 +27,43 @@ import (
 	"go.bug.st/serial"
 )
 
-func Modemreset(comport string) bool {
-	var port serial.Port
+func Modemcommand(port serial.Port, modemcommand string, expectedresponse string, timeout time.Duration, description string, err error) error {
+	// (port,modemcommand,expected response,possible timeout,description,previous result err)
 	var r string
-	var err error
-	if TestPort(comport) != nil {
-		return false
+	if err != nil {
+		return err
 	}
+	err =port.SetReadTimeout(timeout)
+	if err != nil {
+		log.Printf("Modemcommand port.SetReadTimeout(%d) failed: %s\r\n",timeout, err)
+		return err
+	}
+	err = mywrite(port,modemcommand)
+	if err!=nil {
+		return err
+	}
+	r,err = myread(port,expectedresponse)
+	if r>"" {
+		fmt.Printf("Modemcommand '%s' ? %s (%s) got: '%s'\r\n",showdebugmsg(modemcommand),expectedresponse,description, showdebugmsg(r))
+	}
+	if err != nil {
+		return errors.New("Modemcommand "+description+" error: '"+showdebugmsg(r)+err.Error()+"'")
+	}		
+	if !strings.Contains(r,expectedresponse) {
+		return errors.New("Modemcommand "+description+" unexpected response: '"+showdebugmsg(r)+"' expected: '"+expectedresponse+"'")
+	}
+	return err
+}
+func Openmodemport(comport string) (serial.Port, error) {
+	var port serial.Port
+	var err error
+	if comport=="" {
+		comport= fyne.CurrentApp().Preferences().StringWithFallback("mobileport", "COM3")
+	}
+	// err=TestPort(comport)
+	// if  err!= nil {
+	// 	return nil,errors.New("Openmodemport #1 failed: " + err.Error())
+	// }
 	mode := &serial.Mode{
 		BaudRate: 115200,
 		Parity:   serial.NoParity,
@@ -41,77 +71,68 @@ func Modemreset(comport string) bool {
 		StopBits: serial.OneStopBit,
 	}
 	port, err = serial.Open(comport, mode)
-	port.SetReadTimeout(time.Second * 2)
 	if err != nil {
-		log.Fatal("#1 serial.Open(comport)", err)
+		return nil,errors.New("Openmodemport #2 failed: " + err.Error())
 	}
 	port.Break(time.Second)
-	r = ""
-	// mywrite(port,string("AT+DEVCONINFO\r\n"))
-	// r += myread(port,"OK")
-	// mywrite(port, "AT+CGMM\n")		//GET MODEL
-	// r += myread(port,"")
-	// model := myread(port)
-	// model += myread(port)
-	// model = strings.TrimSpace(model)
-	// fmt.Println("MODEL: ", model)
-	mywrite(port,"\032\n")
-	r += myread(port,"")
-	mywrite(port,"AT+CFUN=0\n")
-	r += myread(port,"OK")
-	mywrite(port,"ATZ\r\n") // Reset modem
-	r += myread(port,"OK")
-	mywrite(port,"\032\r\n") // set echo on...
-	r += myread(port,"")
-	r=""
-	mywrite(port,"ATV1\r\n") // set echo on...
-	r += myread(port,"OK")
-	mywrite(port,"ATE0\r\n") // set verbose on...
-	r += myread(port,"OK")
-	mywrite(port,"AT\r\n") // 
-	r += myread(port,"OK")
-	mywrite(port,"AT+CFUN=1\r\n")
-	r += myread(port,"OK")
-	mywrite(port,"AT\r\n") // 
-	r += myread(port,"OK")
-	mywrite(port,"AT+CSCA=\"0046735480000\"\r\n")
-	r += myread(port,"OK")
-	mywrite(port,"AT\r\n")
-	r += myread(port,"OK")
-	// mywrite(port, "AT+CSCA?\r\n")
-	// r += myread(port,"OK")
-	// mywrite(port, "AT+CREG?\r\n")
-	// r += myread(port,"OK")
-	mywrite(port, "AT\r\n")
-	r += myread(port,"OK")
-	mywrite(port,"AT+CMGF=0\r\n") // Set PDU mode
-	r += myread(port,"OK")
-
+	port.Drain()
+	port.ResetInputBuffer()
+	return port, nil
+}
+func Modemreset(comport string) error {
+	// modemcommand format:
+	// (port,modemcommand,expected response,possible timeout,description,previous result err)
+	var port serial.Port
+	if comport=="" {
+		comport= fyne.CurrentApp().Preferences().StringWithFallback("mobileport", "COM3")
+	}
+	var err error
+	err = TestPort(comport)
+	if  err != nil {
+		return errors.New("Modemreset: Testcomport #1 failed: " + err.Error())
+	}
+	port,err=Openmodemport("")
+	if err!=nil {
+		return errors.New("Modemreset Openmodemport failed: " + err.Error())
+	}
+	err=Modemcommand(port,"\032\n","",time.Second*2,"wakeup",err)
+	err=nil
+	err=Modemcommand(port,"\032\n","",time.Second*2,"wakeup",err)
+	err=Modemcommand(port,"AT+CREG?\n","",time.Second*3,"check registration",err)
+	err=Modemcommand(port,"AT+CGDCONT?\n","",time.Second*3,"check CGDCONT",err)
+	err=Modemcommand(port,"AT+CGATT?\n","",time.Second*3,"check GATT",err)
+	err=Modemcommand(port,"AT+CFUN=0\n","",time.Second*3,"set full func off",err)
+	err=Modemcommand(port,"ATZ\n","",time.Second,"reset modem",err)
+	err=Modemcommand(port,"ATE1\r\n","",time.Second,"set echo on",err)
+	err=Modemcommand(port,"ATV1\r\n","",time.Second,"set verbose on",err)
+	err=Modemcommand(port,"AT\r\n","OK",time.Second,"test AT command",err)
+	err=Modemcommand(port,"AT+CFUN=1\r\n","",time.Second*2,"set full func on",err)
+	err=Modemcommand(port,"AT\r\n","OK",time.Second,"test AT command",err)
+	// Set SMS center number = Universal 	= 0046735480000
+	// Set SMS center number = Telenor 		= 0046708000708
+	// err=modemcommand(port,"AT+CSCA=\"0046708000708\"\r\n","OK",time.Second,"set SMS center number",err)
+	// err=modemcommand(port,"AT\r\n","OK",time.Second,"test AT command",err)
+	// err=modemcommand(port,"AT+CMGF=0\r\n","OK",time.Second,"set PDU mode",err)
+	// err=modemcommand(port,string("AT+DEVCONINFO\r\n"),"OK",time.Second,"get device info",err)
+	// err=modemcommand(port, "AT+CGMI\n","OK",time.Second,"get manufacturer",err)		//GET MANUFACTURER
+	// err=modemcommand(port, "AT+CGMM\n","OK",time.Second,"get model",err)		//GET MODEL
 	port.Close()
-	port=nil
-
-	if strings.Contains(strings.ToUpper(r), "ERROR") || !strings.Contains(r, "OK") || len(r) == 0 {
-		return false
+	if err!=nil {
+		return errors.New("Modemreset failed: " + err.Error())
 	}
 	// r should be "AT+CFUN=0,0\r\n\r\nOK\r\nAT+CMGF=0\r\nATE1\r\n\r\nOK\r\nAT+CFUN=1,0\r\n\r\nOK\r\n"?!
-	return true
+	return nil
 }
-func SendSMS(comport string, phoneNumber string, message string) bool {
+func SendSMS(port serial.Port, phoneNumber string, message string) error {
 	var pduarray []string
 	var cmd1 []string
 	var cmd2 []string
-	var r string
 	var err error
-	var port serial.Port 
-	mode := &serial.Mode{
-		BaudRate: 115200,
-		Parity:   serial.NoParity,
-		DataBits: 8,
-		StopBits: serial.OneStopBit,
-	}
-	port, err = serial.Open(comport, mode)
-	if err != nil {
-		log.Fatal("#1 serial.Open(comport)", err)
+	if port == nil {
+		port, err = Openmodemport("")
+		if err != nil {
+			return errors.New("SendSMS #1 openmodemport failed: " + err.Error())
+		}
 	}
 	pduarray = CreateLongPDU(phoneNumber, message)
 	for i := 0; i < len(pduarray); i++ {
@@ -119,28 +140,20 @@ func SendSMS(comport string, phoneNumber string, message string) bool {
 		cmd2 = append(cmd2, pduarray[i]+string(rune(26)))
 	}
 	for i := 0; i < len(cmd1); i++ {
-		mywrite(port,cmd1[i])
-		r = myread(port,">")
-		if !strings.Contains(r, ">") {
-			log.Printf("ERROR #1: no '>' in part %d: %s", i, r)
-
+		fmt.Println("mywrite:", showdebugmsg(cmd1[i]))
+		err =Modemcommand(port,cmd1[i],">",time.Second * 2,"cmd1[i] ? >",nil)
+		if err !=nil {
 			port.Close()
-			port=nil
-		
-			return false
+			return errors.New("SendSMS #2 myread failed: " + err.Error())
 		}
-		mywrite(port,cmd2[i])
-		r = myread(port,"OK")
-		if !strings.Contains(r, "OK") {
-			log.Printf("ERROR #2: no 'OK' in part %d: %s", i, r)
+		err =Modemcommand(port,cmd2[i],">",time.Second * 3,"cmd2[i] ? OK",nil)
+		fmt.Println("mywrite:", showdebugmsg(cmd2[i]))
+		if err !=nil {
 			port.Close()
-			port=nil
-			return false
+			return errors.New("SendSMS #3 myread failed: " + err.Error())
 		}
 	}
-	port.Close()
-	time.Sleep(time.Second)
-	return true
+	return nil
 }
 func WriteWithTimeout(port serial.Port, s string, timeout time.Duration) (int, error) {
 	type result struct {
@@ -161,45 +174,49 @@ func WriteWithTimeout(port serial.Port, s string, timeout time.Duration) (int, e
 		return 0, fmt.Errorf("write timeout")
 	}
 }
-func mywrite(port serial.Port,s string ) {
+func mywrite(port serial.Port,s string ) error {
 	n,err:=port.Write([]byte(s))
 	if err!=nil {
-		log.Fatal(err)
+		return err
 	}
-	if fyne.CurrentApp().Preferences().Bool("debug") {
-		log.Printf("WROTE: %s (%d bytes)\r\n",showdebugmsg(s),n)
+	if n== 0 {
+		return errors.New("no bytes written to port")
 	}
-
-	port.Drain()
+	err = port.Drain()
+	if err!=nil {
+		return err
+	}
+	return nil
 }
-func myread(port serial.Port,response string) string {
+func myread(port serial.Port,response string) (string,error) {
 	var r string
-	timeout:=time.Millisecond * 10
-	port.SetReadTimeout(timeout)
+	var err error
+	var n int
+	timeout:=time.Second * 20
 	buff := make([]byte, 100)
 	startTime := time.Now()
 	for {
-		n, err := port.Read(buff)
+		n, err = port.Read(buff)
 		if err != nil {
-			log.Fatal(err)
-			break
+			break 
 		}
 		if n > 0 {
-			r += fmt.Sprintf("%v", string(buff[:n]))
+			r= fmt.Sprintf("%v", string(buff[:n]))
 		} 
 		if  r>"" {
 			if strings.Contains(r,response) || response==""{
 				break
 			}
 		}
-		if time.Since(startTime) > 5*time.Second {
-            break
+		if response=="" && n==0 {
+			break
+		}
+		if time.Since(startTime) > timeout {
+            err= errors.New("2 second read timeout")
+			break
         }
 	}
-	if fyne.CurrentApp().Preferences().Bool("debug") {
-		log.Printf("READ: %s (?='%s')\r\n",showdebugmsg(r), response)
-	}
-	return r
+	return r,err
 }
 func CreateLongPDU(phoneNumber string, message string) []string {
 	const maxCharsPerSegment = 67 // Maximum characters per segment
@@ -275,15 +292,6 @@ func CreatePDU(number string, message string, udh string) string {
 	pdu = strings.TrimSpace(pdu)
 	return pdu
 }
-func showdebugmsg(s string) string {
-	r2 := s
-	r2 = strings.Replace(r2, string(rune(13)), "\\r", -1)
-	r2 = strings.Replace(r2, string(rune(10)), "\\n", -1)
-	r2 = strings.Replace(r2, string(rune(0)), "\\0", -1)
-	r2 = strings.Replace(r2, string(rune(9)), "\\t", -1)
-	r2 = strings.Replace(r2, string(rune(26)), "\\z", -1)
-	return r2
-}
 func GetPortsList() ([]string, error) {
 	return serial.GetPortsList()
 }
@@ -298,27 +306,60 @@ func TestPort(comport string) error {
 		StopBits: serial.OneStopBit,
 	}
 	port, err = serial.Open(comport, mode)
+	port.Drain()
+	port.ResetInputBuffer()
 	if err != nil {
 		return err // err.Error("#1 serial.Open(comport)")
 	}
-	err= port.SetReadTimeout(time.Second * 2)
-	if err != nil {
-		return err //err.Error("#2 port.SetReadTimeout(time.Second * 2)")
-	}
-	err = port.Break(time.Second)
-	if err != nil {
-		return err //("#3 port.Break(time.Second)", err)
-	}
+	// err= port.SetReadTimeout(time.Second * 2)
+	// if err != nil {
+	// 	return err //err.Error("#2 port.SetReadTimeout(time.Second * 2)")
+	// }
+	// err = port.Break(time.Second)
+	// if err != nil {
+	// 	return err //("#3 port.Break(time.Second)", err)
+	// }
 	// check port write possibility
-	n,err =WriteWithTimeout(port,"\032\n",time.Second*2)
+	n,err =WriteWithTimeout(port,"AT\r\n",time.Second*2)
 	if err!=nil {
-		log.Println("#4 WriteWithTimeout(port,\"\\032\\n\",time.Second*2)", err)
 		port.Close()
 		return err
 	}
 	if n==0 {
 		return errors.New("no bytes written to port")
 	}
+	port.SetReadTimeout(time.Second)
+	buff := make([]byte, 100)
+	n,err=port.Read(buff)
+	fmt.Print("...Got ",n," characters, error: ", err)
+	if n>0 {
+		fmt.Printf("...Data: '%s'", showdebugmsg(string(buff[:n])))
+	}
 	port.Close()
+	if !strings.Contains(string(buff[:n]), "OK") {
+		return errors.New("no OK received from port")
+	}
 	return nil
+}
+func GetMobilePort() (string, error) {
+	ports, err := GetPortsList()
+	if err != nil {
+		return "", err
+	}
+	for i := 0; i < len(ports); i++ {
+		err = TestPort(ports[i])
+		if err == nil {
+			return ports[i], nil
+		}
+	}
+	return "", errors.New("no valid mobile port found")
+}
+func showdebugmsg(s string) string {
+	r2 := s
+	r2 = strings.Replace(r2, string(rune(13)), "\\r", -1)
+	r2 = strings.Replace(r2, string(rune(10)), "\\n", -1)
+	r2 = strings.Replace(r2, string(rune(0)), "\\0", -1)
+	r2 = strings.Replace(r2, string(rune(9)), "\\t", -1)
+	r2 = strings.Replace(r2, string(rune(26)), "\\z", -1)
+	return r2
 }

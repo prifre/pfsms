@@ -81,19 +81,16 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
 	}}
-	portslist, err := pfmobile.GetPortsList()
-	if err != nil {
-		log.Fatal("GetPortsList Error")
-	}
-	if !strings.Contains(strings.Join(portslist,", "),s.mobilePort.Text) {
-		s.mobilePort.Text = ""
+	p,err:=pfmobile.GetMobilePort()
+	if p>"" && err==nil {
+		s.mobilePort.Text = p
 		fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
-}
+	}
 	mobileContainer = container.NewGridWithColumns(2,
 		NewBoldLabel("Your Phone Number"), s.mobileNumber,
 		NewBoldLabel("Your Country"), s.mobileCountry,
 		NewBoldLabel("Your Phone Model"), s.mobileModel,
-		NewBoldLabel("Your Computer Port ("+strings.Join(portslist,", ")+")"), s.mobilePort,
+		NewBoldLabel("Your Computer Port"), s.mobilePort,
 		NewBoldLabel("Add some numbering into messages"), s.mobileAddhash,
 		NewBoldLabel("Test mobile settings"), s.btnTestSMS,
 	)

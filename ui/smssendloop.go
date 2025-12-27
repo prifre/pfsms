@@ -8,6 +8,7 @@ package ui
 // got it working with Samsung S24Ultra! speed 14s/sms using timeout = Millisecond*700
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -79,7 +80,7 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 	}
 	var sendtext, phoneNumber string
 	var failures, success int
-	var result error
+	var err error
 	s.mydebug = true
 	// s.Setuplog()
 	s.starttime = time.Now()
@@ -87,7 +88,7 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 	message = strings.TrimSpace(message)
 	log.Printf("Got %d phonenumbers to send ok.\r\n", len(phonenumbers))
 	modemresetfail := 0
-	for !pfmobile.Modemreset(s.Comport) && modemresetfail < 10 {
+	for (pfmobile.Modemreset("")!=nil) && modemresetfail < 10 {
 		log.Println("--------------------MODEMRESET FAIL: ", modemresetfail)
 		modemresetfail++
 		s.logtext = &widget.Label{Text: ShowShortLines(ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),loglines))}
@@ -103,24 +104,10 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		if s.Addhash {
 			sendtext = fmt.Sprintf(sendtext+"\r\n#=%d", i+1)
 		}
-		sentok := false
-		for !sentok {
-			sentok = pfmobile.SendSMS(s.Comport,phoneNumber, sendtext)
-			if !sentok {
-				log.Println("--------------------SENDSMS FAILED")
-				modemresetfail := 0
-				for !pfmobile.Modemreset(s.Comport) && modemresetfail < 10 {
-					log.Println("--------------------MODEMRESET FAIL: ", modemresetfail)
-					modemresetfail++
-					s.logtext = &widget.Label{Text: ShowShortLines(ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),loglines))}
-				}
-				if modemresetfail > 8 {
-					return nil
-				}
-				log.Println("--------------------MODEMRESET OK")
-				failures++
-			}
-			s.logtext = &widget.Label{Text: ShowShortLines(ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),loglines))}
+		err = pfmobile.SendSMS(nil,phoneNumber, sendtext)
+		if err!=nil {
+			log.Println("--------------------SENDSMS FAILED")
+			return errors.New("SendSMS failed: " + err.Error())
 		}
 		success++
 		m:=fmt.Sprintf("Message %d/%d to phone %s sent!", i+1, len(phonenumbers), phoneNumber)
@@ -144,5 +131,5 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		log.Printf("Started: %s  Finished: %s  Duration: %s\r\n", s1, s2, time.Since(s.starttime))
 		log.Printf("Speed: %ds/sms\r\n", int(time.Since(s.starttime).Seconds())/len(phonenumbers))
 	}
-	return result
+	return nil
 }

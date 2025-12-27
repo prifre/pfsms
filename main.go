@@ -8,8 +8,8 @@ import (
 	"github.com/prifre/pfsms/ui"
 )
 
+
 func main() {
-	
 	var wx,wy float32
 	a := app.NewWithID("pfsms")
 	w := a.NewWindow("pfsms")

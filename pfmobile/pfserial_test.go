@@ -5,7 +5,19 @@ import (
 	"strconv"
 	"testing"
 )
-
+func TestModemreset(t *testing.T) {
+	comport:= "COM3"
+	port,err:=Openmodemport(comport)
+	if err!=nil {
+		t.Fatalf("Openmodemport failed on %s: %s", comport, err.Error())
+	}
+	b:=Modemreset(comport)
+	if b!=nil {
+		t.Fatalf("Modemreset failed on %s: %s", port, b.Error())
+	} else {
+		fmt.Println("Modemreset OK on ")
+	}
+}
 func TestPDU_unicode(t *testing.T) {
 	message := "hello\r\nhelloÅÄÖ"
 	number := "+46736290839"
@@ -111,7 +123,9 @@ func TestSendMessage(t *testing.T) {
 	// s := new(SMStype)
 	// s.Comport="COM3"
 	// s.SendMessage(p,msg)
-	SendSMS("COM3","0046736290839", "test")
+	// Modemreset("COM3")
+	port,_:=Openmodemport("COM3")
+	SendSMS(port,"0046736290839", "test")
 }
 func TestGetPortsList(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
@@ -125,21 +139,20 @@ func TestGetPortsList(t *testing.T) {
 	}
 	fmt.Printf("ports=%v\r\n", s)
 }
-
 func TestTestPort(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
 	// msg :="This is a test!"
 	// s := new(SMStype)
 	// s.Comport="COM3"
 	// s.SendMessage(p,msg)
-	comport:="COM4"
+	comport:="COM3"
 	result:=TestPort(comport)
-	fmt.Println("TestPort ",comport," results in ",result) 
 	if result!=nil {
-		t.Fatalf("TestPort failed")
+		fmt.Print("...TestPort ",comport," results in: ",result.Error(), " -- FAILED!\r\n") 
+	} else {
+		fmt.Print("...TestPort ",comport," results in: <nil> -- OK!\r\n") 
 	}
 }
-
 func TestAllTestPorts(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
 	// msg :="This is a test!"
@@ -159,6 +172,23 @@ func TestAllTestPorts(t *testing.T) {
 	for si:=0;si<len(s);si++ {
 		fmt.Print("Testing port: ",s[si])	
 		result:=TestPort(s[si])
-		fmt.Println("...... TestPort ",s[si]," results in =",result)	
+		fmt.Print("...TestPort ",s[si]," results in =",result)
+		if result==nil {
+			fmt.Println("   --> OK!")
+		} else {
+			fmt.Println("   --> FAILED!")
+		}
 	}
+}
+func TestGetMobilePort(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	// msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	s,err:=GetMobilePort()
+	if err!=nil {
+		t.Fatalf("GetMobilePort err=%v", err)
+	}
+	fmt.Printf("\r\nGetMobilePort found='%v'\r\n", s)
 }
