@@ -68,7 +68,12 @@ func  (s *theform) HandleSendsms(phone,groupname, msg string) {
 		p2 += Fixphonenumber(p, countrycode)
 		p2 += "\t" + new(pfdatabase.DBtype).GetFname(p) + "\t" + new(pfdatabase.DBtype).GetLname(p)
 	}
-	s.SendMessages(strings.Split(p2,","), msg)
+	err:=s.SendMessages(strings.Split(p2,","), msg)
+	if err!=nil {
+		log.Println("HandleSendsms Error sending messages: ", err.Error())
+		s.logtext.Text = fmt.Sprintf("Error sending messages: %s", err.Error())
+		s.logtext.Refresh()
+	}
 }
 func (s *theform) tabItem() *container.TabItem {
 	return &container.TabItem{Text: "Messages", Icon: theme.MailSendIcon(), Content: s.buildUI()}
@@ -109,7 +114,7 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		}
 		err = pfmobile.SendSMS(port,phoneNumber, sendtext)
 		if err!=nil {
-			log.Println("--------------------SENDSMS FAILED")
+			log.Println("--------------------SENDSMS FAILED:", err.Error())
 			return errors.New("SendSMS failed: " + err.Error()+ " to phone " + phoneNumber)
 		}
 		success++

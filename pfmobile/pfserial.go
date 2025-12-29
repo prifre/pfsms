@@ -162,8 +162,6 @@ func SendSMS(port serial.Port, phoneNumber string, message string) error {
 			return errors.New("SendSMS #3 myread failed: " + err.Error())
 		}
 	}
-	_=Modemcommand(port,string(rune(26)),"",time.Second,"ctrl-Z",err)
-	_=Modemcommand(port,"AT\r","OK",time.Second,"wakeup",err)
 	return nil
 }
 func WriteWithTimeout(port serial.Port, s string, timeout time.Duration) (int, error) {
