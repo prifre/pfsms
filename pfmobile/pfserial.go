@@ -100,10 +100,15 @@ func Modemreset(comport string) (serial.Port,error) {
 	if err!=nil {
 		return nil,errors.New("Modemreset Openmodemport failed: " + err.Error())
 	}
-	err=Modemcommand(port,"\032\r","",time.Second*2,"wakeup",err)
-	err=nil
-	err=Modemcommand(port,"\032\r","",time.Second*2,"wakeup",err)
-	err=Modemcommand(port,"AT+CFUN=1; &F; E1; V1; +CMGF=0\r","",time.Second*2,"wakeup",err)
+	_=Modemcommand(port,"\032\r","",time.Second,"wakeup",err)
+	_=Modemcommand(port,"AT\r","OK",time.Second,"wakeup",err)
+	err=Modemcommand(port,"AT+CFUN=1\r","OK",time.Second*10,"reset modem",nil)
+//	err=Modemcommand(port,"AT&F\r","OK",time.Second,"reset modem2",nil)
+	err=Modemcommand(port,"ATZ\r","OK",time.Millisecond*200,"reset modem2",err)
+	err=Modemcommand(port,"ATE0; V1\r","OK",time.Millisecond*200,"echo & verbose",err)
+	err=Modemcommand(port,"AT+CSCA=\"0046708000708\"\r","OK",time.Millisecond*300,"setup SMS CENTER",err)
+	err=Modemcommand(port,"AT+CSMP=17,167,0,16\r","OK",time.Millisecond*300,"flash SMS setting",err)
+	err=Modemcommand(port,"AT+CMGF=0\r","OK",time.Second,"set PDU mode",err)
 	// err=Modemcommand(port,"\032\r","",time.Second*2,"wakeup",err)
 	// err=Modemcommand(port,"AT+CREG?\r","",time.Second*3,"check registration",err)
 	// err=Modemcommand(port,"AT+CGDCONT?\r","",time.Second*3,"check CGDCONT",err)
@@ -117,9 +122,7 @@ func Modemreset(comport string) (serial.Port,error) {
 	// err=Modemcommand(port,"AT\r","OK",time.Second,"test AT command",err)
 	// Set SMS center number = Universal 	= 0046735480000
 	// Set SMS center number = Telenor 		= 0046708000708
-	err=Modemcommand(port,"AT+CSCA=\"0046708000708\"\r","OK",time.Second,"set SMS center number",err)
 	// err=Modemcommand(port,"AT\r","OK",time.Second,"test AT command",err)
-	err=Modemcommand(port,"AT+CMGF=0\r","OK",time.Second,"set PDU mode",err)
 	// err=Modemcommand(port,string("AT+DEVCONINFO\r"),"OK",time.Second,"get device info",err)
 	// err=Modemcommand(port, "AT+CGMI\r","OK",time.Second,"get manufacturer",err)		//GET MANUFACTURER
 	// err=Modemcommand(port, "AT+CGMM\r","OK",time.Second,"get model",err)		//GET MODEL
@@ -148,17 +151,19 @@ func SendSMS(port serial.Port, phoneNumber string, message string) error {
 		cmd2 = append(cmd2, pduarray[i]+string(rune(26)))
 	}
 	for i := 0; i < len(cmd1); i++ {
-		err =Modemcommand(port,cmd1[i],">",time.Second * 2,"cmd1[i] ? >",nil)
+		err =Modemcommand(port,cmd1[i],">",time.Second * 3,"length",nil)
 		if err !=nil {
 			port.Close()
 			return errors.New("SendSMS #2 myread failed: " + err.Error())
 		}
-		err =Modemcommand(port,cmd2[i],">",time.Second * 3,"cmd2[i] ? >",nil)
+		err =Modemcommand(port,cmd2[i],">",time.Second * 5,"PDU",nil)
 		if err !=nil {
 			port.Close()
 			return errors.New("SendSMS #3 myread failed: " + err.Error())
 		}
 	}
+	_=Modemcommand(port,string(rune(26)),"",time.Second,"ctrl-Z",err)
+	_=Modemcommand(port,"AT\r","OK",time.Second,"wakeup",err)
 	return nil
 }
 func WriteWithTimeout(port serial.Port, s string, timeout time.Duration) (int, error) {
@@ -192,6 +197,7 @@ func mywrite(port serial.Port,s string ) error {
 	if err!=nil {
 		return err
 	}
+	time.Sleep(100 * time.Millisecond) // Kort paus för att låta modemet svara
 	return nil
 }
 func myread(port serial.Port,response string) (string,error) {

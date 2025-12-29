@@ -20,6 +20,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
 	"github.com/prifre/pfsms/pfmobile"
+
+	"go.bug.st/serial"
 )
 const loglines = 10
 type theform struct {
@@ -79,14 +81,21 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		s.Addhash = fyne.CurrentApp().Preferences().Bool("addhash")
 	}
 	var sendtext, phoneNumber string
-	var failures, success int
+	var success int
 	var err error
+	var port serial.Port
 	s.mydebug = true
 	// s.Setuplog()
 	s.starttime = time.Now()
 	s.timeout = time.Millisecond * 700
 	message = strings.TrimSpace(message)
 	log.Printf("Got %d phonenumbers to send ok.\r\n", len(phonenumbers))
+	port,err= pfmobile.Modemreset(s.Comport)
+	if err!=nil {
+		log.Println("--------------------MODEMRESET FAILED")
+		return errors.New("Modemreset failed: " + err.Error())
+	}
+	pfmobile.Modemcommand(port,"AT+CMMS=1\r","OK",time.Second*2,"Quicksend",nil)
 	for i, record := range phonenumbers {
 		rec := strings.Split(record, "\t")
 		phoneNumber = rec[0]
@@ -98,16 +107,13 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		if s.Addhash {
 			sendtext = fmt.Sprintf(sendtext+"\r\n#=%d", i+1)
 		}
-		err = pfmobile.SendSMS(nil,phoneNumber, sendtext)
+		err = pfmobile.SendSMS(port,phoneNumber, sendtext)
 		if err!=nil {
 			log.Println("--------------------SENDSMS FAILED")
-			return errors.New("SendSMS failed: " + err.Error())
+			return errors.New("SendSMS failed: " + err.Error()+ " to phone " + phoneNumber)
 		}
 		success++
 		m:=fmt.Sprintf("Message %d/%d to phone %s sent!", i+1, len(phonenumbers), phoneNumber)
-		if failures>0 {
-			m += fmt.Sprintf(" (failures: %d)", failures)
-		}
 		log.Println(m)
 		tstamp := time.Now().Format("20060102150405")
 		//SaveHistory([]string {tstamp,groupname,phone,message})
@@ -115,11 +121,12 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 8)
 		s.logtext.Refresh()
 		if !s.mydebug {
-			log.Printf("%s Message %d/%d to phone %s sent! (failures: %d)\r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber, failures)
+			log.Printf("%s Message %d/%d to phone %s sent! \r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber)
 		}
 	}
+	pfmobile.Modemcommand(port,"AT+CMMS=2\r","OK",time.Second*2,"Quicksend end",nil)
 	if !s.mydebug {
-		log.Printf("RESULT OF SMS SENDING: Failures: %d Success: %d\r\n", failures, success)
+		log.Printf("RESULT OF SMS SENDING: Success: %d\r\n", success)
 		s1 := s.starttime.Format("2006-01-02 15:04:05")
 		s2 := time.Now().Format("2006-01-02 15:04:05")
 		log.Printf("Started: %s  Finished: %s  Duration: %s\r\n", s1, s2, time.Since(s.starttime))
