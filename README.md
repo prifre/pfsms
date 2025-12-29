@@ -13,8 +13,14 @@ To enable AT-commands on my Samsung Galaxy phone, I need to
 4 Tap “Build number” seven times. ...
 5 Enter your pattern, PIN or password to enable the Developer options menu.
 6 The "Developer options" menu will now appear in your Settings menu.
-7 Then Scroll down amont options until "Error handling" and below there somewhere you will see:
-"3GPP AT-commands". Turn this option ON !
+7 Then Scroll down amont options until "Error handling" and below there somewhere you will see: "3GPP AT-commands". Turn this option ON !
+8 USB-standardkonfiguration: Överföra filer
+9 Enable USB Debugging.
+10 Disable "Auto Blocker": "Auto Blocker" security feature prevent serial/USB commands. Go to Settings > Security and Privacy > Auto Blocker and turn it Off.
+
+Also make sure that you have installed Samsung USB Drivers on your computer.
+https://developer.samsung.com/android-usb-driver
+
 
 ### SMS messaging ###
 To send an sms, just go to Message tab and paste desired phonenumbers separated by commas (,).

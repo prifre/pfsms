@@ -4,8 +4,21 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 )
-
+func TestModemreset(t *testing.T) {
+	start:=time.Now()
+	comport:= "COM3"
+	var err error
+	_,err=Modemreset(comport)
+	if err!=nil {
+		t.Fatalf("Modemreset failed on %s: %s", comport, err.Error())
+	} else {
+		fmt.Println("Modemreset OK on ")
+	}
+	elapsed:=time.Since(start)
+	fmt.Printf("Modemreset took %s\r\n", elapsed)
+}
 func TestPDU_unicode(t *testing.T) {
 	message := "hello\r\nhelloÅÄÖ"
 	number := "+46736290839"
@@ -107,9 +120,109 @@ func TestCreateLongPDU2(t *testing.T) {
 }
 func TestSendMessage(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
+	msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	// Modemreset("COM3")
+	// AT+CMGS=51
+	// 0051000D81006437260938F900080B24050003000101005400680069007300200069007300200061002000740065007300740021
+	/* TEST MODEM SEQUENCE VIA putty:
+	// testa signalstyrka, bör vara >10.
+	AT+CSQ
+	// kör text-läge:
+	AT+CMGF=1
+	// kolla meddelandecentralens nummer:
+	AT+CSCA?
+	// ställ in teckenuppsättning till UCS2 (för att kunna skicka svenska tecken)
+	AT+CSCS="UCS2"
+	// skicka sms till nummer (inkl riktnr +46...)
+
+	AT
+	ATZ
+	AT+CSCA?
+	AT+CSCA="+46708000708"
+	AT+CGATT?
+	AT+CPIN?
+	AT+CSCS="UCS2"
+	AT+CSMP=17,167,0,0
+	AT+CMGF=1
+	AT+CMEE=2; 
+	ATE1 ; +CMGS="0046736290839"
+	AT+CMGF=1; +CFUN=1; V1; 
+	TEST MESSAGE
+
+
+
+	*/
+	p,err:=Modemreset("COM3")
+	if err!=nil {
+		t.Fatalf("Modemreset err=%v", err)
+	}
+	SendSMS(p,"0046736290839",msg)
+}
+func TestGetPortsList(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
 	// msg :="This is a test!"
 	// s := new(SMStype)
 	// s.Comport="COM3"
 	// s.SendMessage(p,msg)
-	SendSMS("COM3","0046736290839", "test")
+	s,err:=GetPortsList()
+	if err!=nil {
+		t.Fatalf("GetPortsList err=%v", err)
+	}
+	fmt.Printf("ports=%v\r\n", s)
+}
+func TestTestPort(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	// msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	comport:="COM3"
+	result:=TestPort(comport)
+	if result!=nil {
+		fmt.Print("...TestPort ",comport," results in: ",result.Error(), " -- FAILED!\r\n") 
+	} else {
+		fmt.Print("...TestPort ",comport," results in: <nil> -- OK!\r\n") 
+	}
+}
+func TestAllTestPorts(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	// msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	var s[]string
+	// var err error
+	s,_= GetPortsList()
+	// for i:=0;i<30;i++ {
+	// 	s=append(s, fmt.Sprintf("COM%d",i))
+	// }
+	fmt.Println("Available ports: ",s)
+	// if err!=nil {
+	// 	t.Fatalf("GetPortsList err=%v", err)
+	// }
+	for si:=0;si<len(s);si++ {
+		fmt.Print("Testing port: ",s[si])	
+		result:=TestPort(s[si])
+		fmt.Print("...TestPort ",s[si]," results in =",result)
+		if result==nil {
+			fmt.Println("   --> OK!")
+		} else {
+			fmt.Println("   --> FAILED!")
+		}
+	}
+}
+func TestGetMobilePort(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	// msg :="This is a test!"
+	// s := new(SMStype)
+	// s.Comport="COM3"
+	// s.SendMessage(p,msg)
+	s,err:=GetMobilePort()
+	if err!=nil {
+		t.Fatalf("GetMobilePort err=%v", err)
+	}
+	fmt.Printf("\r\nGetMobilePort found='%v'\r\n", s)
 }
