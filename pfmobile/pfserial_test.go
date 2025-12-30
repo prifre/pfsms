@@ -155,7 +155,23 @@ func TestCreateLongPDU2(t *testing.T) {
 	}
 	fmt.Println("ALL CreateLongPDU tests OK!!!!!!!!!!!")
 }
-func TestSendMessage(t *testing.T) {
+func TestSendDirectMessage(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	starttime:=time.Now()
+	msg :="This is a test A sent "+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö"
+	fmt.Println("TestSendMessage msg=", msg)
+	p,err:=Modemreset("COM3")
+	fmt.Println("Modemreset took ", time.Since(starttime))
+	if err!=nil {
+		t.Fatalf("Modemreset err=%v", err)
+	}
+	err=SendDirectSMS(p,"0046736290839",msg)
+	if err!=nil {
+		t.Fatalf("SendDirectSMS err=%v", err)
+	}
+	fmt.Println("SendSMS took ", time.Since(starttime))
+}
+func TestSendStoredMessage(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
 	starttime:=time.Now()
 	msg :="This is a test sent "+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö"
@@ -165,7 +181,10 @@ func TestSendMessage(t *testing.T) {
 	if err!=nil {
 		t.Fatalf("Modemreset err=%v", err)
 	}
-	SendDirectSMS(p,"0046736290839",msg)
+	err=SendStoredSMS(p,"0046736290839",msg)
+	if err!=nil {
+		t.Fatalf("SendStoredSMS err=%v", err)
+	}
 	fmt.Println("SendSMS took ", time.Since(starttime))
 }
 func TestGetPortsList(t *testing.T) {

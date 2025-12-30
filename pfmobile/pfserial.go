@@ -34,7 +34,7 @@ func Modemcommand(port serial.Port, modemcommand string, expectedresponse string
 	}
 	err =port.SetReadTimeout(timeout/100)
 	if err != nil {
-		log.Printf("Modemcommand port.SetReadTimeout(%d) failed: %s\r\n",timeout, err)
+		log.Printf("Modemcommand Error #1 port.SetReadTimeout(%d) failed: %s\r\n",timeout, err)
 		return err
 	}
 	err = mywrite(port,modemcommand)
@@ -46,10 +46,10 @@ func Modemcommand(port serial.Port, modemcommand string, expectedresponse string
 		fmt.Printf("Modemcommand '%s' ? %s (%s) got: '%s'\r\n",showdebugmsg(modemcommand),expectedresponse,description, showdebugmsg(r))
 	}
 	if err != nil {
-		return errors.New("Modemcommand "+description+" error: '"+showdebugmsg(r)+err.Error()+"'")
+		return errors.New("Modemcommand Error #2 "+description+" readerror '"+showdebugmsg(r)+err.Error()+"'")
 	}		
 	if !strings.Contains(r,expectedresponse) {
-		return errors.New("Modemcommand "+description+" unexpected response: '"+showdebugmsg(r)+"' expected: '"+expectedresponse+"'")
+		return errors.New("Modemcommand Error #3 "+description+" unexpected response: '"+showdebugmsg(r)+"' expected: '"+expectedresponse+"'")
 	}
 	return err
 }
@@ -104,12 +104,12 @@ func Modemreset(comport string) (serial.Port,error) {
 	_=Modemcommand(port,"AT\r","OK",time.Second,"wakeup",err)
 	err=Modemcommand(port,"AT+CFUN=1\r","OK",time.Second*10,"reset modem",nil)
 //	err=Modemcommand(port,"AT&F\r","OK",time.Second,"reset modem2",nil)
-	err=Modemcommand(port,"ATZ\r","OK",time.Millisecond*200,"reset modem2",err)
-	err=Modemcommand(port,"ATE0; V1\r","OK",time.Millisecond*200,"echo & verbose",err)
-	err=Modemcommand(port,"AT+CSCA=\"0046708000708\"\r","OK",time.Millisecond*300,"setup SMS CENTER",err)
+	err=Modemcommand(port,"ATZ\r","OK",time.Second*2,"reset modem2",err)
+	err=Modemcommand(port,"ATE0; V1\r","OK",time.Second*2,"echo & verbose",err)
+	err=Modemcommand(port,"AT+CSCA=\"0046708000708\"\r","OK",time.Second*2,"setup SMS CENTER",err)
 //	err=Modemcommand(port,"AT+CSMP=17,167,0,16\r","OK",time.Millisecond*300,"Flash SMS ON",err)
-	err=Modemcommand(port,"AT+CSMP=17,167,0,0\r","OK",time.Millisecond*300,"Flash SMS OFF",err)
-	err=Modemcommand(port,"AT+CMGF=0\r","OK",time.Second,"set PDU mode",err)
+	err=Modemcommand(port,"AT+CSMP=17,167,0,0\r","OK",time.Second*2,"Flash SMS OFF",err)
+	err=Modemcommand(port,"AT+CMGF=0\r","OK",time.Second*2,"set PDU mode",err)
 	// err=Modemcommand(port,"\032\r","",time.Second*2,"wakeup",err)
 	// err=Modemcommand(port,"AT+CREG?\r","",time.Second*3,"check registration",err)
 	// err=Modemcommand(port,"AT+CGDCONT?\r","",time.Second*3,"check CGDCONT",err)
@@ -152,6 +152,7 @@ func SendDirectSMS(port serial.Port, phoneNumber string, message string) error {
 		cmd2 = append(cmd2, pduarray[i]+string(rune(26)))
 	}
 	for i := 0; i < len(cmd1); i++ {
+		fmt.Println("Sending part ", i+1, " of ", len(cmd1))
 		err =Modemcommand(port,cmd1[i],">",time.Second ,"length",nil)
 		if err !=nil {
 			port.Close()
@@ -165,7 +166,7 @@ func SendDirectSMS(port serial.Port, phoneNumber string, message string) error {
 	}
 	return nil
 }
-func SenWritedSMS(port serial.Port, phoneNumber string, message string) error {
+func SendStoredSMS(port serial.Port, phoneNumber string, message string) error {
 	var pduarray []string
 	var cmd1 []string
 	var cmd2 []string
@@ -245,8 +246,9 @@ func myread(port serial.Port,response string,timeout time.Duration) (string,erro
 	var err error
 	var n int
 	var myreadtimeout time.Duration= time.Second
-	buff := make([]byte, 100)
-	startTime := time.Now()
+	var myreadtimestart time.Time= time.Now()
+	var startTime time.Time = time.Now()
+	var buff []byte = make([]byte, 100)
 	for {
 		n, err = port.Read(buff)
 		if err != nil {
@@ -261,11 +263,12 @@ func myread(port serial.Port,response string,timeout time.Duration) (string,erro
 		if response=="" {
 			break
 		}
-		if time.Since(startTime) > myreadtimeout {
-            log.Printf("myread timeout %dms\r\n", time.Since(startTime).Milliseconds())
-        }
+		if time.Since(myreadtimestart) > myreadtimeout {
+			myreadtimestart = time.Now()
+            log.Printf("myread timeout %dms, waiting for %s (got '%s').\r\n", time.Since(startTime).Milliseconds(),timeout-time.Since(startTime),r)
+		}
 		if time.Since(startTime) > timeout {
-            return r,errors.New("myread timeout exceeded, no expected response: " + response)
+            return r,errors.New("myread timeout exceeded, no expected response: " + response+ " widthin "+timeout.String())
         }
 	}
 	return r,err
