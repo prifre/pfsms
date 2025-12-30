@@ -1,4 +1,4 @@
-package pfemail
+package github.com/prifre/pfsms/pfemail
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package pfdatabase
+package github.com/prifre/pfsms/pfdatabase
 
 import (
 	"database/sql"

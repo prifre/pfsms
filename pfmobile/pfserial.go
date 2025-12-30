@@ -1,4 +1,4 @@
-package pfmobile
+package pfsms/pfmobile
 
 // Special program to send a lots of sms using a mobile phone!
 // uses logfilename for logging

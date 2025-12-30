@@ -1,4 +1,4 @@
-package ui
+package github.com/prifre/pfsms/ui
 
 import (
 	"fyne.io/fyne/v2"
