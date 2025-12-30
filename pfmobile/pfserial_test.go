@@ -165,7 +165,7 @@ func TestSendMessage(t *testing.T) {
 	if err!=nil {
 		t.Fatalf("Modemreset err=%v", err)
 	}
-	SendSMS(p,"0046736290839",msg)
+	SendDirectSMS(p,"0046736290839",msg)
 	fmt.Println("SendSMS took ", time.Since(starttime))
 }
 func TestGetPortsList(t *testing.T) {

@@ -14,7 +14,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
-	"github.com/prifre/pfsms/pfmobile"
 )
 
 var mobilemodels = []string{"Samsung S24", "Samsung S9"}
@@ -81,11 +80,7 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
 	}}
-	p,err:=pfmobile.GetMobilePort()
-	if p>"" && err==nil {
-		s.mobilePort.Text = p
-		fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
-	}
+	fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
 	mobileContainer = container.NewGridWithColumns(2,
 		NewBoldLabel("Your Phone Number"), s.mobileNumber,
 		NewBoldLabel("Your Country"), s.mobileCountry,

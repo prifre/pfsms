@@ -100,7 +100,7 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		log.Println("--------------------MODEMRESET FAILED")
 		return errors.New("Modemreset failed: " + err.Error())
 	}
-	pfmobile.Modemcommand(port,"AT+CMMS=1\r","OK",time.Second*2,"Quicksend",nil)
+	// pfmobile.Modemcommand(port,"AT+CMMS=1\r","OK",time.Second*2,"Quicksend",nil)
 	for i, record := range phonenumbers {
 		rec := strings.Split(record, "\t")
 		phoneNumber = rec[0]
@@ -112,7 +112,7 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		if s.Addhash {
 			sendtext = fmt.Sprintf(sendtext+"\r\n#=%d", i+1)
 		}
-		err = pfmobile.SendSMS(port,phoneNumber, sendtext)
+		err = pfmobile.SendDirectSMS(port,phoneNumber, sendtext)
 		if err!=nil {
 			log.Println("--------------------SENDSMS FAILED:", err.Error())
 			return errors.New("SendSMS failed: " + err.Error()+ " to phone " + phoneNumber)
@@ -129,7 +129,7 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 			log.Printf("%s Message %d/%d to phone %s sent! \r\n", time.Now().Format("2006-01-02 15:04:05"), i+1, len(phonenumbers), phoneNumber)
 		}
 	}
-	pfmobile.Modemcommand(port,"AT+CMMS=2\r","OK",time.Second*2,"Quicksend end",nil)
+	// pfmobile.Modemcommand(port,"AT+CMMS=2\r","OK",time.Second*2,"Quicksend end",nil)
 	if !s.mydebug {
 		log.Printf("RESULT OF SMS SENDING: Success: %d\r\n", success)
 		s1 := s.starttime.Format("2006-01-02 15:04:05")

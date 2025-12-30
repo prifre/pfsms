@@ -2250,3 +2250,35 @@ OK
 2025/12/27 21:48:28 #1 serial.Open(comport) Serial port not found
 2025/12/27 21:48:28 #1 serial.Open(comport) Serial port not found
 2025/12/27 21:48:29 #1 serial.Open(comport) Serial port not found
+2025/12/30 08:01:32 Got 1 phonenumbers to send ok.
+2025/12/30 08:02:03 --------------------SENDSMS FAILED: SendSMS #3 myread failed: Modemcommand PDU error: '\r\n+CMGS: 56\r\n\r\nOK\r\n2 second read timeout'
+2025/12/30 08:04:14 Got 1 phonenumbers to send ok.
+2025/12/30 08:04:41 --------------------SENDSMS FAILED: SendSMS #3 myread failed: Modemcommand PDU error: '\r\n2 second read timeout'
+2025/12/30 08:09:46 Got 1 phonenumbers to send ok.
+2025/12/30 08:09:50 myread timeout 1050ms
+2025/12/30 08:09:50 myread timeout 1255ms
+2025/12/30 08:09:51 myread timeout 1457ms
+2025/12/30 08:09:51 myread timeout 1658ms
+2025/12/30 08:09:51 myread timeout 1861ms
+2025/12/30 08:09:52 myread timeout 1023ms
+2025/12/30 08:09:52 myread timeout 1226ms
+2025/12/30 08:09:53 myread timeout 1431ms
+2025/12/30 08:09:53 myread timeout 1633ms
+2025/12/30 08:09:53 myread timeout 1836ms
+2025/12/30 08:10:24 myread timeout 30003ms
+2025/12/30 08:10:27 myread timeout 33956ms
+2025/12/30 08:10:57 myread timeout 63963ms
+2025/12/30 08:11:27 myread timeout 93964ms
+2025/12/30 08:11:58 myread timeout 123979ms
+2025/12/30 08:12:28 myread timeout 153992ms
+2025/12/30 08:12:58 myread timeout 183998ms
+2025/12/30 08:13:28 myread timeout 214009ms
+2025/12/30 08:13:58 myread timeout 244011ms
+2025/12/30 08:14:28 myread timeout 274025ms
+2025/12/30 08:14:58 myread timeout 304027ms
+2025/12/30 08:15:28 myread timeout 334040ms
+2025/12/30 08:15:58 myread timeout 364046ms
+2025/12/30 08:16:28 myread timeout 394054ms
+2025/12/30 08:16:58 myread timeout 424064ms
+2025/12/30 08:17:28 myread timeout 454076ms
+2025/12/30 08:17:58 myread timeout 484085ms

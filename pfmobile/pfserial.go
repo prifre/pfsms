@@ -32,7 +32,7 @@ func Modemcommand(port serial.Port, modemcommand string, expectedresponse string
 	if err != nil {
 		return err
 	}
-	err =port.SetReadTimeout(timeout)
+	err =port.SetReadTimeout(timeout/100)
 	if err != nil {
 		log.Printf("Modemcommand port.SetReadTimeout(%d) failed: %s\r\n",timeout, err)
 		return err
@@ -41,7 +41,7 @@ func Modemcommand(port serial.Port, modemcommand string, expectedresponse string
 	if err!=nil {
 		return err
 	}
-	r,err = myread(port,expectedresponse)
+	r,err = myread(port,expectedresponse,timeout)
 	if r>"" {
 		fmt.Printf("Modemcommand '%s' ? %s (%s) got: '%s'\r\n",showdebugmsg(modemcommand),expectedresponse,description, showdebugmsg(r))
 	}
@@ -107,7 +107,8 @@ func Modemreset(comport string) (serial.Port,error) {
 	err=Modemcommand(port,"ATZ\r","OK",time.Millisecond*200,"reset modem2",err)
 	err=Modemcommand(port,"ATE0; V1\r","OK",time.Millisecond*200,"echo & verbose",err)
 	err=Modemcommand(port,"AT+CSCA=\"0046708000708\"\r","OK",time.Millisecond*300,"setup SMS CENTER",err)
-	err=Modemcommand(port,"AT+CSMP=17,167,0,16\r","OK",time.Millisecond*300,"flash SMS setting",err)
+//	err=Modemcommand(port,"AT+CSMP=17,167,0,16\r","OK",time.Millisecond*300,"Flash SMS ON",err)
+	err=Modemcommand(port,"AT+CSMP=17,167,0,0\r","OK",time.Millisecond*300,"Flash SMS OFF",err)
 	err=Modemcommand(port,"AT+CMGF=0\r","OK",time.Second,"set PDU mode",err)
 	// err=Modemcommand(port,"\032\r","",time.Second*2,"wakeup",err)
 	// err=Modemcommand(port,"AT+CREG?\r","",time.Second*3,"check registration",err)
@@ -134,7 +135,7 @@ func Modemreset(comport string) (serial.Port,error) {
 	// r should be "AT+CFUN=0,0\r\rOK\rAT+CMGF=0\rATE1\r\rOK\rAT+CFUN=1,0\r\rOK\r"?!
 	return port,nil
 }
-func SendSMS(port serial.Port, phoneNumber string, message string) error {
+func SendDirectSMS(port serial.Port, phoneNumber string, message string) error {
 	var pduarray []string
 	var cmd1 []string
 	var cmd2 []string
@@ -151,17 +152,58 @@ func SendSMS(port serial.Port, phoneNumber string, message string) error {
 		cmd2 = append(cmd2, pduarray[i]+string(rune(26)))
 	}
 	for i := 0; i < len(cmd1); i++ {
-		err =Modemcommand(port,cmd1[i],">",time.Second * 3,"length",nil)
+		err =Modemcommand(port,cmd1[i],">",time.Second ,"length",nil)
 		if err !=nil {
 			port.Close()
 			return errors.New("SendSMS #2 myread failed: " + err.Error())
 		}
-		err =Modemcommand(port,cmd2[i],">",time.Second * 5,"PDU",nil)
+		err =Modemcommand(port,cmd2[i],">",time.Second * 30,"PDU",nil)
 		if err !=nil {
 			port.Close()
 			return errors.New("SendSMS #3 myread failed: " + err.Error())
 		}
 	}
+	return nil
+}
+func SenWritedSMS(port serial.Port, phoneNumber string, message string) error {
+	var pduarray []string
+	var cmd1 []string
+	var cmd2 []string
+	var err error
+	if port == nil {
+		port, err = Openmodemport("")
+		if err != nil {
+			return errors.New("SendSMS #1 openmodemport failed: " + err.Error())
+		}
+	}
+	pduarray = CreateLongPDU(phoneNumber, message)
+	for i := 0; i < len(pduarray); i++ {
+		cmd1 = append(cmd1, "AT+CMGW="+fmt.Sprintf("%d", (len(pduarray[i])-2)/2)+"\r")
+		cmd2 = append(cmd2, pduarray[i]+string(rune(26)))
+	}
+	for i := 0; i < len(cmd1); i++ {
+		err =Modemcommand(port,cmd1[i],">",time.Second ,"length",nil)
+		if err !=nil {
+			port.Close()
+			return errors.New("SendSMS #2 myread failed: " + err.Error())
+		}
+		err =Modemcommand(port,cmd2[i],">",time.Second * 10,"PDU",nil)
+		if err !=nil {
+			port.Close()
+			return errors.New("SendSMS #3 myread failed: " + err.Error())
+		}
+	}
+	r, err := myread(port, "+CMGW:", time.Second*10)
+	if !strings.Contains(r,"+CMGW:") {
+		port.Close()
+		return errors.New("SendSMS #4 myread failed: no +CMGW: response, got: " + showdebugmsg(r))
+	}
+	var n int
+	_, err = fmt.Sscanf(r, "AT+CMSS=%d", &n)
+	if err != nil {
+		log.Fatal("Kunde inte tolka strängen:", err)
+	}
+	err =Modemcommand(port,fmt.Sprintf("AT+CMSS=%d",n),"OK",time.Second ,"send sms",nil)
 	return nil
 }
 func WriteWithTimeout(port serial.Port, s string, timeout time.Duration) (int, error) {
@@ -198,11 +240,11 @@ func mywrite(port serial.Port,s string ) error {
 	time.Sleep(100 * time.Millisecond) // Kort paus för att låta modemet svara
 	return nil
 }
-func myread(port serial.Port,response string) (string,error) {
+func myread(port serial.Port,response string,timeout time.Duration) (string,error) {
 	var r string
 	var err error
 	var n int
-	timeout:=time.Second * 20
+	var myreadtimeout time.Duration= time.Second
 	buff := make([]byte, 100)
 	startTime := time.Now()
 	for {
@@ -213,17 +255,17 @@ func myread(port serial.Port,response string) (string,error) {
 		if n > 0 {
 			r= fmt.Sprintf("%v", string(buff[:n]))
 		} 
-		if  r>"" {
-			if strings.Contains(r,response) || response==""{
-				break
-			}
-		}
-		if response=="" && n==0 {
+		if strings.Contains(r,response) {
 			break
 		}
+		if response=="" {
+			break
+		}
+		if time.Since(startTime) > myreadtimeout {
+            log.Printf("myread timeout %dms\r\n", time.Since(startTime).Milliseconds())
+        }
 		if time.Since(startTime) > timeout {
-            err= errors.New("2 second read timeout")
-			break
+            return r,errors.New("myread timeout exceeded, no expected response: " + response)
         }
 	}
 	return r,err
