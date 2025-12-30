@@ -1,4 +1,4 @@
-package pfsms
+package main
 
 //Main file
 
