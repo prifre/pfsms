@@ -1,13 +1,14 @@
-package github.com/prifre/pfsms/pfemail
+package pfemail
 
 import (
 	"fmt"
 	"log"
 
+	"pfsms/pfdatabase"
+
 	"fyne.io/fyne/v2"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
-	"github.com/prifre/pfsms/pfdatabase"
 )
 
 type Etype struct {

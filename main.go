@@ -1,4 +1,4 @@
-package github.com/prifre/pfsmspfsms
+package pfsms
 
 //Main file
 
