@@ -97,10 +97,8 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 	log.Printf("Got %d phonenumbers to send ok.\r\n", len(phonenumbers))
 	port,err= pfmobile.Modemreset(s.Comport)
 	if err!=nil {
-		log.Println("--------------------MODEMRESET FAILED")
 		return errors.New("Modemreset failed: " + err.Error())
 	}
-	// pfmobile.Modemcommand(port,"AT+CMMS=1\r","OK",time.Second*2,"Quicksend",nil)
 	for i, record := range phonenumbers {
 		rec := strings.Split(record, "\t")
 		phoneNumber = rec[0]
@@ -114,14 +112,12 @@ func (s *theform) SendMessages(phonenumbers []string, message string) error {
 		}
 		err = pfmobile.SendDirectSMS(port,phoneNumber, sendtext)
 		if err!=nil {
-			log.Println("--------------------SENDSMS FAILED:", err.Error())
-			return errors.New("SendSMS failed: " + err.Error()+ " to phone " + phoneNumber)
+			return errors.New("SendSMS failed to " + phoneNumber + " message " + fmt.Sprintf("%d", i+1) + ": " + err.Error())
 		}
 		success++
 		m:=fmt.Sprintf("Message %d/%d to phone %s sent!", i+1, len(phonenumbers), phoneNumber)
 		log.Println(m)
 		tstamp := time.Now().Format("20060102150405")
-		//SaveHistory([]string {tstamp,groupname,phone,message})
 		new(pfdatabase.DBtype).SaveHistory([]string{tstamp, s.groupname.Text, phoneNumber, sendtext})
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 8)
 		s.logtext.Refresh()

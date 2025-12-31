@@ -3,7 +3,7 @@ package main
 //Main file
 
 import (
-	"pfsms/ui"
+	"github.com/prifre/pfsms/ui"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"

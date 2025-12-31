@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"pfsms/pfdatabase"
+	"github.com/prifre/pfsms/pfdatabase"
 
 	"fyne.io/fyne/v2"
 	"github.com/emersion/go-imap"

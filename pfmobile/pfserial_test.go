@@ -1,41 +1,41 @@
 package pfmobile
 
-	//various testscenarios:
+//various testscenarios:
 
-	// s := new(SMStype)
-	// s.Comport="COM3"
-	// s.SendMessage(p,msg)
-	// Modemreset("COM3")
-	// AT+CMGS=51
-	// 0051000D81006437260938F900080B24050003000101005400680069007300200069007300200061002000740065007300740021
-	/* TEST MODEM SEQUENCE VIA putty:
-	// testa signalstyrka, bör vara >10.
-	AT+CSQ
-	// kör text-läge:
-	AT+CMGF=1
-	// kolla meddelandecentralens nummer:
-	AT+CSCA?
-	// ställ in teckenuppsättning till UCS2 (för att kunna skicka svenska tecken)
-	AT+CSCS="UCS2"
-	// skicka sms till nummer (inkl riktnr +46...)
+// s := new(SMStype)
+// s.Comport="COM3"
+// s.SendMessage(p,msg)
+// Modemreset("COM3")
+// AT+CMGS=51
+// 0051000D81006437260938F900080B24050003000101005400680069007300200069007300200061002000740065007300740021
+/* TEST MODEM SEQUENCE VIA putty:
+// testa signalstyrka, bör vara >10.
+AT+CSQ
+// kör text-läge:
+AT+CMGF=1
+// kolla meddelandecentralens nummer:
+AT+CSCA?
+// ställ in teckenuppsättning till UCS2 (för att kunna skicka svenska tecken)
+AT+CSCS="UCS2"
+// skicka sms till nummer (inkl riktnr +46...)
 
-	AT
-	ATZ
-	AT+CSCA?
-	AT+CSCA="+46708000708"
-	AT+CGATT?
-	AT+CPIN?
-	AT+CSCS="UCS2"
-	AT+CSMP=17,167,0,0
-	AT+CMGF=1
-	AT+CMEE=2; 
-	ATE1 ; +CMGS="0046736290839"
-	AT+CMGF=1; +CFUN=1; V1; 
-	TEST MESSAGE
+AT
+ATZ
+AT+CSCA?
+AT+CSCA="+46708000708"
+AT+CGATT?
+AT+CPIN?
+AT+CSCS="UCS2"
+AT+CSMP=17,167,0,0
+AT+CMGF=1
+AT+CMEE=2;
+ATE1 ; +CMGS="0046736290839"
+AT+CMGF=1; +CFUN=1; V1;
+TEST MESSAGE
 
 
 
-	*/
+*/
 
 import (
 	"fmt"
@@ -145,21 +145,60 @@ func TestCreateLongPDU2(t *testing.T) {
 			fmt.Printf("part1 length = %04x %d\r\n", len(pduarray[g]), len(pduarray[g]))
 			fmt.Println(want[g])
 			fmt.Println(pduarray[g])
-		} else {
-			fmt.Println(g)
 		}
 	}
-	for i := 0; i < len(pduarray); i++ {
-		pduarraylength := len(pduarray[i]) / 2
-		fmt.Println(len(pduarray[i]), pduarraylength)
-	}
+	// for i := 0; i < len(pduarray); i++ {
+	// 	pduarraylength := len(pduarray[i]) / 2
+	// 	fmt.Println(len(pduarray[i]), pduarraylength)
+	// }
 	fmt.Println("ALL CreateLongPDU tests OK!!!!!!!!!!!")
 }
 func TestSendDirectMessage(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
 	starttime:=time.Now()
-	msg :="This is a test A sent "+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö"
-	fmt.Println("TestSendMessage msg=", msg)
+	msg :="This is a SendDirectMessage test, sent "+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö"
+	fmt.Println("TestSendDirectMessage msg=", msg)
+	p,err:=Modemreset("COM3")
+	fmt.Println("Modemreset took ", time.Since(starttime))
+	if err!=nil {
+		t.Fatalf("Modemreset err=%v", err)
+	}
+	err=SendDirectSMS(p,"0046736290839",msg)
+	if err!=nil {
+		t.Fatalf("SendDirectSMS err=%v", err)
+	}
+	fmt.Println("SendSMS took ", time.Since(starttime))
+}
+func TestSendingMANYDirectMessages(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	var starttime time.Time=time.Now()
+	var  msg string = "Detta är ett test med SendDirectMessage, där flera meddelanden sänds efter varandra.\r\n"
+	var cnt int=40
+	fmt.Printf("Skicka %d SendDirectMessage msg='%s'", cnt, msg)
+	p,err:=Modemreset("COM3")
+	fmt.Println("Modemreset took ", time.Since(starttime))
+	if err!=nil {
+		t.Fatalf("Modemreset err=%v", err)
+	}
+	var sendstarttime time.Time = time.Now()
+	for i:=0;i<cnt;i++ {
+		s:=fmt.Sprintf("%sNummer %d skickades %s.\r\n",msg,i+1,time.Now().Format("2006-01-02 15:04:05"))
+		err=SendDirectSMS(p,"0046736290839",s)
+		if err!=nil {
+			fmt.Println("Failed to send message ", i+1," but sent ", i, " messages ok.")
+			t.Fatalf("SendDirectSMS err=%v", err)
+		}
+		fmt.Printf("...........Sending %d took %s.\r\n", i+1, time.Since(sendstarttime))
+	}
+	fmt.Printf("Sending %d messages took total %s.",cnt, time.Since(starttime))
+	t.Logf("Sending %d messages took total %s.",cnt, time.Since(starttime))
+}
+func TestSendDirectLongMessage(t *testing.T) {
+	// p :=[]string{"0736290839","0736290839"}
+	starttime:=time.Now()
+	msg :="This is a SendDirectMessage test, sent "+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö\r\n"
+	msg += msg + msg + msg + msg + msg + msg + msg + msg + msg + msg
+	fmt.Println("TestSendDirectMessage msg=", msg)
 	p,err:=Modemreset("COM3")
 	fmt.Println("Modemreset took ", time.Since(starttime))
 	if err!=nil {
@@ -174,8 +213,8 @@ func TestSendDirectMessage(t *testing.T) {
 func TestSendStoredMessage(t *testing.T) {
 	// p :=[]string{"0736290839","0736290839"}
 	starttime:=time.Now()
-	msg :="This is a test sent "+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö"
-	fmt.Println("TestSendMessage msg=", msg)
+	msg :="This is a SendStoredMessage test, sent"+time.Now().Format("2006-01-02 15:04:05")+"! ÅÄÖ åäö"
+	fmt.Println("TestSendStoredMessage msg=", msg)
 	p,err:=Modemreset("COM3")
 	fmt.Println("Modemreset took ", time.Since(starttime))
 	if err!=nil {
