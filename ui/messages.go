@@ -12,10 +12,22 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
 )
-
+type theform struct {
+	form           *widget.Form
+	phone          *widget.Entry
+	groupname      *widget.Entry
+	message        *widget.Entry
+	btnSaveGroup   *widget.Button
+	btnDeleteGroup *widget.Button
+	btnSubmit      *widget.Button
+	groupSelect    *widget.Select
+	dataAllGroups  [][]string
+	window         fyne.Window
+}
 func NewMessages(w fyne.Window) *theform {
 	return &theform{window: w}
 }
@@ -96,7 +108,7 @@ func (s *theform) buildUI() *container.Scroll {
 	s.message.OnChanged = func (v string) {
 		fyne.CurrentApp().Preferences().SetString("message",s.message.Text)
 	}
-	s.btnSubmit = &widget.Button{Text: "Click to send message", OnTapped: func() {
+	s.btnSubmit = &widget.Button{Text: "Click to add message to sending queue", OnTapped: func() {
 		s.HandleSendsms(s.phone.Text, s.groupname.Text, s.message.Text)
 	}}
 	s.form = &widget.Form{
@@ -110,12 +122,10 @@ func (s *theform) buildUI() *container.Scroll {
 			{Text: "", Widget: s.btnSubmit},
 		},
 	}
-	s.logtext = &widget.Label{Text: ShowShortLines(ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),loglines))}
 	s.form.Refresh()
 	return container.NewScroll(
 		container.NewVBox(
 			s.form,
-			s.logtext,
 		))
 }
 func (s *theform) Getphonesforgroup(v string) string {
@@ -131,4 +141,37 @@ func (s *theform) Getphonesforgroup(v string) string {
 		}
 	}
 	return np
+}
+func  (s *theform) HandleSendsms(phone,groupname, msg string) {
+	// split phone into \r\n and ","
+	ph := phone
+	ph = strings.Replace(ph, "\r", ",", -1)
+	ph = strings.Replace(ph, "\n", ",", -1)
+	ph = strings.Replace(ph, ",,", ",", -1)
+	ph = strings.Replace(ph, ",,", ",", -1)
+	ph2 := ""
+	for i := 0; i < len(ph); i++ {
+		if strings.Contains("0123456789+,", string(ph[i])) {
+			ph2 = ph2 + string(ph[i])
+		}
+	}
+	countrycode := fyne.CurrentApp().Preferences().StringWithFallback("mobilecountry", "Sweden(+46)")
+	p2:=""
+	for _,p :=range(strings.Split(ph2,",")) {
+		if len(p)<5 {
+			continue
+		}
+		if p2>"" {
+			p2+=","
+		}
+		p2 += Fixphonenumber(p, countrycode)
+		p2 += "\t" + new(pfdatabase.DBtype).GetFname(p) + "\t" + new(pfdatabase.DBtype).GetLname(p)
+	}
+	err:=new(pfdatabase.DBtype).AddToQueue(strings.Split(p2,","),groupname, msg)
+	if err!=nil {
+		return
+	}
+}
+func (s *theform) tabItem() *container.TabItem {
+	return &container.TabItem{Text: "Messages", Icon: theme.MailSendIcon(), Content: s.buildUI()}
 }

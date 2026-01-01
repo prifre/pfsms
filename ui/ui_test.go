@@ -15,10 +15,10 @@ func TestGetmemoryinfo(t *testing.T) {
 	fmt.Println(Getmemoryinfo())
 }
 
-func TestTable(t *testing.T) {
+func TestCustomers(t *testing.T) {
 		a := app.NewWithID("pfsms")
 		w := a.NewWindow("pfsms-gui")
-		n:=NewTable(w).tabItem()
+		n:=NewCustomers(w).tabItem()
 		c:= &container.AppTabs{Items: []*container.TabItem{		n,		}}
 		w.SetContent(c)
 		w.Resize(fyne.NewSize(700, 600))

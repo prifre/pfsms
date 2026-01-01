@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	_ "github.com/mattn/go-sqlite3"
@@ -18,29 +19,46 @@ type DBtype struct {
 	reply        sql.Result
 	Databasepath string
 }
-
-func (db *DBtype) Opendb() {
+func checkGUI() bool {
+	b := os.Getenv("APP_MODE") == "GUI"
+	return b
+}
+func (db *DBtype) Opendb() error {
 	var err error
 	// var temp fyne.URI
 	if db.conn != nil {
-		return // allready opened!
+		return nil // allready opened!
 	}
-	if _, err := os.Stat(db.Databasepath); errors.Is(err, os.ErrNotExist) {
-		db.Setupdb()
+	_,err=os.Stat(db.Databasepath)
+	if errors.Is(err, os.ErrNotExist) {
+		// err = errors.New("Database not found, creating new db: " + db.Databasepath)
+		err = db.Setupdb()
+		if err != nil {
+			return errors.New("#1 Opendb SetupDB " + err.Error())
+		}
 	}
 	db.conn, err = sql.Open("sqlite3", db.Databasepath) // Open the created SQLite File
 	if err != nil {
-		log.Fatal("setupdatabase storage.Child error", err.Error())
-		db.Setupdb()
+		err =db.Setupdb()
+		if err != nil {
+			return errors.New("#2 Opendb SetupDB2 " + err.Error())
+		}
 		db.conn, err = sql.Open("sqlite3", db.Databasepath) // Open the created SQLite File
 		if err != nil {
-			log.Println("#1 Opendb ", err.Error())
+			return errors.New("#3 Opendb Open2 " + err.Error())
 		}
 	}
+	return err
 }
 func (db *DBtype) Setupdb() error {
 	var err error
-	db.Databasepath = fyne.CurrentApp().Preferences().String("pfsmsdb")
+	if db.Databasepath == "" {
+		if !checkGUI() {
+			db.Databasepath = fyne.CurrentApp().Preferences().String("pfsmsdb")
+		} else {
+			db.Databasepath = "pfsms.db"
+		}
+	}
 	if _, err = os.Stat(db.Databasepath); err != nil {
 		log.Println("#1 Setupdb database not found, creating new db: " + db.Databasepath)
 		var file *os.File
@@ -94,6 +112,9 @@ func (db *DBtype) Createtables() error {
 
 	s += "CREATE TABLE tblHashtable (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
 	s += "hash VARCHAR(100));"
+
+	s += "CREATE TABLE tblQueue (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+	s += "tstamp VARCHAR(20), groupname VARCHAR(100), phone VARCHAR(20), message TEXT);"
 	sq := strings.Split(s, ";")
 	for i := 0; i < len(sq); i++ {
 		if len(sq[i]) < 10 {
@@ -116,6 +137,7 @@ func (db *DBtype) Createtables() error {
 	db.conn.Close()
 	return err
 }
+// CUSTOMERS FUNCTIONS
 func (db *DBtype) ShowCustomers() [][]string {
 	var phone, firstname, lastname string
 	var data [][]string
@@ -135,8 +157,23 @@ func (db *DBtype) ShowCustomers() [][]string {
 		}
 		data = append(data, []string{phone, firstname, lastname})
 	}
-	db.Closedatabase()
 	return data
+}
+func (db *DBtype) DeleteAllCustomers() {
+	var sq string
+	var err error
+	db.Opendb()
+	sq = "DELETE FROM tblCustomers;"
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 DeleteCustomers Prepare DELETE", err.Error())
+		return
+	}
+	_, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		log.Println("#2 ImportCustomers Failed DELETE tblGroups")
+		return
+	}
 }
 func (db *DBtype) ImportCustomers(frfile string) {
 	// customer textfile should be phone <<tab>> firstname <<tab>> lastname <<tab>> note <<cr>> <<lf>>
@@ -209,7 +246,6 @@ func (db *DBtype) ImportCustomers(frfile string) {
 		c++
 	}
 	log.Printf("Imported %d customers.\r\n", c)
-	db.Closedatabase()
 }
 func (db *DBtype) ExportCustomers(tofile string) {
 	var err error
@@ -229,7 +265,6 @@ func (db *DBtype) ExportCustomers(tofile string) {
 			txt += fmt.Sprintf("%s\t%s\t%s\t%s\r\n", phone, firstname, lastname, note)
 		}
 	}
-	db.Closedatabase()
 	if txt == "" {
 		// export sample data!!!
 		txt = "+46736290839\tPeter\tFreund\r\n"
@@ -245,23 +280,7 @@ func (db *DBtype) ExportCustomers(tofile string) {
 		log.Println("#3 ExportCustomers WriteFile ", err.Error())
 	}
 }
-func (db *DBtype) DeleteCustomers() {
-	var sq string
-	var err error
-	db.Opendb()
-	sq = "DELETE FROM tblCustomers;"
-	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
-	if err != nil {
-		log.Println("#1 DeleteCustomers Prepare DELETE", err.Error())
-		return
-	}
-	_, err = db.statement.Exec() // Execute SQL Statements
-	if err != nil {
-		log.Println("#2 ImportCustomers Failed DELETE tblGroups")
-		return
-	}
-	db.Closedatabase()
-}
+// GROUPS FUNCTIONS
 func (db *DBtype) ShowGroups() []string {
 	// should show all available groupnames
 	var data []string
@@ -282,7 +301,6 @@ func (db *DBtype) ShowGroups() []string {
 		}
 		data = append(data, groupname)
 	}
-	db.Closedatabase()
 	return data
 }
 func (db *DBtype) ShowAllGroups() [][]string {
@@ -304,7 +322,6 @@ func (db *DBtype) ShowAllGroups() [][]string {
 		}
 		data = append(data, []string{groupname, phone})
 	}
-	db.Closedatabase()
 	return data
 }
 func (db *DBtype) SaveGroup(groupname string, phones string) {
@@ -335,7 +352,6 @@ func (db *DBtype) SaveGroup(groupname string, phones string) {
 			return
 		}
 	}
-	db.Closedatabase()
 }
 func (db *DBtype) DeleteGroup(g string) {
 	var err error
@@ -352,9 +368,24 @@ func (db *DBtype) DeleteGroup(g string) {
 		log.Println("#2 DeleteGroup Exec failed: ", sq, " ", err.Error())
 		return
 	}
-	db.Closedatabase()
 }
-func (db *DBtype) ImportGroups(b string) {
+func (db *DBtype) DeleteAllGroups() {
+	var sq string
+	var err error
+	db.Opendb()
+	sq = "DELETE FROM tblGroups;"
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		log.Println("#1 DeleteGroups Prepare DELETE", err.Error())
+		return
+	}
+	_, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		log.Println("#2 ImportGroups Failed DELETE tblGroups")
+		return
+	}
+}
+func (db *DBtype) ImportGroupsFromString(b string) {
 	// b should be tab-separated \r separated string with -> grouname <tab> phone <CR>
 	// since import is done directory from field in Messages... (not from file)
 	var sq string
@@ -384,24 +415,50 @@ func (db *DBtype) ImportGroups(b string) {
 			return
 		}
 	}
-	db.Closedatabase()
 }
-func (db *DBtype) DeleteGroups() {
+func (db *DBtype) ImportGroups(frfile string) {
+	// b should be tab-separated \r separated string with -> grouname <tab> phone <CR>
+	// since import is done directory from field in Messages... (not from file)
 	var sq string
 	var err error
+	var b0 []byte
+	var c int
+	b0, err = os.ReadFile(frfile) // SQL to make tables!
+	if err != nil {
+		log.Println("#1 ImportGroups ReadFile", err.Error())
+		return
+	}
+	b := string(b0)
+	//fix bad characters
+	b = Removebadsqlcharacters(b)
+	b = strings.Replace(b, "\n", "", -1)
+	// allcurrent := db.ShowGroups()
 	db.Opendb()
-	sq = "DELETE FROM tblGroups;"
-	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
-	if err != nil {
-		log.Println("#1 DeleteGroups Prepare DELETE", err.Error())
-		return
+	for i := 0; i < len(strings.Split(b, "\r")); i++ {
+		b1 := strings.Split(b, "\r")[i]
+		b2 := strings.Split(b1, "\t")
+		if len(b2) < 2 {
+			continue
+		}
+		b2[1] = Fixphonenumber(b2[1])
+		if len(b2[1]) < 5 {
+			continue
+		}
+		sq = "INSERT INTO tblGroups (groupname,phone)"
+		sq += fmt.Sprintf(" VALUES ('%s','%s')", b2[0], b2[1])
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			log.Println("#3 ImportGroups prepare", err.Error())
+			return
+		}
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			log.Println("#4 ImportGroups Exec ", err.Error())
+			return
+		}
+		c++
 	}
-	_, err = db.statement.Exec() // Execute SQL Statements
-	if err != nil {
-		log.Println("#2 ImportGroups Failed DELETE tblGroups")
-		return
-	}
-	db.Closedatabase()
+	log.Printf("Imported %d groups.\r\n", c)
 }
 func (db *DBtype) ExportGroups(tofile string) {
 	var err error
@@ -422,7 +479,6 @@ func (db *DBtype) ExportGroups(tofile string) {
 			txt += fmt.Sprintf("%s\t%s\r\n", groupname, phone)
 		}
 	}
-	db.Closedatabase()
 	if txt == "" {
 		// export sample data!!!
 		txt = "Sample\t0046736290839\r\n"
@@ -435,6 +491,7 @@ func (db *DBtype) ExportGroups(tofile string) {
 		log.Println("#3 ExportGroups WriteFile,", err.Error())
 	}
 }
+// HISTORY FUNCTIONS
 func (db *DBtype) ShowHistory() [][]string {
 	var r [][]string
 	var err error
@@ -454,6 +511,53 @@ func (db *DBtype) ShowHistory() [][]string {
 	}
 	db.Closedatabase()
 	return r
+}
+func (db *DBtype) ImportHistory(frfile string) {
+	// s += "CREATE TABLE tblHistory (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
+	// s += "tstamp VARCHAR(20), groupname VARCHAR(100), phone VARCHAR(20), message TEXT);"
+	// b should be tab-separated \r separated string with -> tstamp <tab> groupname <tab> phone <tab> message <CR>
+	// since import is done directory from field in Messages... (not from file)
+	var sq string
+	var err error
+	var b0 []byte
+	var c int
+	b0, err = os.ReadFile(frfile) // SQL to make tables!
+	if err != nil {
+		log.Println("#1 ImportGroups ReadFile", err.Error())
+		return
+	}
+	b := string(b0)
+	//fix bad characters
+	b = Removebadsqlcharacters(b)
+	b = strings.Replace(b, "\n", "", -1)
+	// allcurrent := db.ShowGroups()
+	db.Opendb()
+	b = Removebadsqlcharacters(b)
+	for i := 0; i < len(strings.Split(b, "\r")); i++ {
+		b1 := strings.Split(b, "\r")[i]
+		b2 := strings.Split(b1, "\t")
+		if len(b2) < 2 {
+			continue
+		}
+		b2[1] = Fixphonenumber(b2[2])
+		if len(b2[2]) < 5 {
+			continue
+		}
+		sq = "INSERT INTO tblHistory (tstamp,groupname,phone,message)"
+		sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", b2[0], b2[1], b2[2], b2[3])
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			log.Println("#3 ImportHistory prepare", err.Error())
+			return
+		}
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			log.Println("#4 ImportHistory Exec ", err.Error())
+			return
+		}
+		c++
+	}
+	log.Println("Imported ",c," history.")
 }
 func (db *DBtype) ExportHistory(tofile string) {
 	// s += "CREATE TABLE tblHistory (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, "
@@ -476,7 +580,6 @@ func (db *DBtype) ExportHistory(tofile string) {
 		ts:=fmt.Sprintf("%s-%s-%s\t%s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
 		txt += fmt.Sprintf("%s\t%s\t%s\t%s\r\n", ts, groupname, phone, message)
 	}
-	db.Closedatabase()
 	if txt == "" {
 		// export sample History!!!
 		txt = "2024-08-01\t13:50:55\ttest\t0046736290839\tThis is a test message 1\\r\\nwith 2 lines\r\n"
@@ -489,7 +592,7 @@ func (db *DBtype) ExportHistory(tofile string) {
 		log.Println("#3 ExportHistory WriteFile ", err.Error())
 	}
 }
-func (db *DBtype) SaveHistory(r []string) {
+func (db *DBtype) SaveHistory(r []string) error {
 	// resulting string with history from pfmobile = tstamp,phone,message
 	// message in \"\"
 	var sq string
@@ -503,16 +606,202 @@ func (db *DBtype) SaveHistory(r []string) {
 	sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", r[0], r[1], r[2], r[3])
 	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
 	if err != nil {
-		log.Println("#1 SaveHistory Prepare", err.Error())
-		return
+		return errors.New("#1 SaveHistory Prepare: "+ err.Error())
 	}
 	db.reply, err = db.statement.Exec() // Execute SQL Statements
 	if err != nil {
-		log.Println("#2 SaveHistory Exec ", err.Error())
-		return
+		return errors.New("#2 SaveHistory Exec: "+ err.Error())
+	}
+	return err
+}
+// QUE FUNCTIONS
+func (db *DBtype) AddToQueue(r []string,groupname string,sendtext string) error {
+	var tstamp string
+	var sq string
+	var err error
+	db.Opendb()
+	for i:=0;i<len(r);i++ {
+		r[i]=Removebadsqlcharacters(r[i])
+		b:=strings.Split(r[i],"\t")
+		tstamp = time.Now().Format("20060102150405")
+		phone:=Fixphonenumber(b[0])
+		if len(phone)<5 {
+			return errors.New("Invalid phone number: " + phone)
+		}
+		if strings.Contains(sendtext, "<<Fname>>") || strings.Contains(sendtext, "<<Lname>>") {
+			fname:=Removebadsqlcharacters(b[1])
+			lname:=Removebadsqlcharacters(b[2])
+			sendtext = strings.ReplaceAll(sendtext, "<<Fname>>", fname)
+			sendtext = strings.ReplaceAll(sendtext, "<<Lname>>", lname)
+		}
+		msg:=Removebadsqlcharacters(sendtext)
+		sq = "INSERT INTO tblQueue (tstamp,phone,groupname,message)"
+		sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", tstamp, phone, groupname, msg)
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			return errors.New("AddToQueue Prepare error: " + err.Error())
+		}
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			return errors.New("AddToQueue Exec error: " + err.Error())
+		}
+	}
+	return err
+}
+func (db *DBtype) DeletefromQueue(id string) error {
+	// resulting string with history from pfmobile = tstamp,phone,message
+	// message in \"\"
+	var sq string
+	var err error
+	db.Opendb()
+	sq = fmt.Sprintf("DELETE FROM tblQueue WHERE ID = %s", id)
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		return errors.New("DeletefromQueue Prepare error: " + err.Error())
+	}
+	db.reply, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		return errors.New("DeletefromQueue Exec error: " + err.Error())
+	}
+	return err
+}
+func (db *DBtype) ShowQueue() [][]string {
+	var r [][]string
+	var fixtstamp string
+	var err error
+	var sq, tstamp,  phone string
+	db.Opendb()
+	sq = "SELECT tstamp,phone FROM tblQueue ORDER BY tstamp ASC"
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		log.Println("#1 ShowQueue Query ", err.Error())
+	}
+	for rows.Next() {
+		err = rows.Scan(&tstamp, &phone)
+		if err != nil {
+			log.Println("#2 ShowQueue Scan ", err.Error())
+		}
+		if len(tstamp)>13 {
+			fixtstamp=fmt.Sprintf("%s-%s-%s %s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
+		}
+		r = append(r, []string{fixtstamp, phone})
 	}
 	db.Closedatabase()
+	return r
 }
+func (db *DBtype) DeleteAllQueue() error {
+	var sq string
+	var err error
+	db.Opendb()
+	sq = "DELETE FROM tblQueue;"
+	db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+	if err != nil {
+		return errors.New("#1 DeleteAllQueue Prepare DELETE"+ err.Error())
+	}
+	db.reply, err = db.statement.Exec() // Execute SQL Statements
+	if err != nil {
+		return errors.New("#2 DeleteAllQueue Exec "+ err.Error())
+	}
+	return err
+}
+func (db *DBtype) ImportQueue(b string) {
+	// b should be tab-separated \r separated string with -> tstamp <tab> groupname <tab> phone <tab> message <CR>
+	// since import is done directory from field in Messages... (not from file)
+	var sq string
+	var err error
+	db.Opendb()
+	b = Removebadsqlcharacters(b)
+	for i := 0; i < len(strings.Split(b, "\r")); i++ {
+		b1 := strings.Split(b, "\r")[i]
+		b2 := strings.Split(b1, "\t")
+		if len(b2) < 2 {
+			continue
+		}
+		b2[2] = Fixphonenumber(b2[2])
+		if len(b2[2]) < 5 {
+			continue
+		}
+		sq = "INSERT INTO tblQueue (tstamp,groupname,phone,message)"
+		sq += fmt.Sprintf(" VALUES ('%s','%s','%s','%s')", b2[0], b2[1], b2[2], b2[3])
+		db.statement, err = db.conn.Prepare(sq) // Prepare SQL Statement
+		if err != nil {
+			log.Println("#3 ImportQueue prepare", err.Error())
+			return
+		}	
+		db.reply, err = db.statement.Exec() // Execute SQL Statements
+		if err != nil {
+			log.Println("#4 ImportQueue Exec ", err.Error())
+			return
+		}
+	}
+}
+func (db *DBtype) ExportQueue(tofile string) error {
+	var err error
+	var sq, txt, tstamp, groupname, phone, message string
+	db.Opendb()
+	sq = "SELECT tstamp,groupname,phone,message FROM tblQueue ORDER BY tstamp ASC"
+	rows, err := db.conn.Query(sq)
+	if err != nil {
+		return errors.New("#1 ExportQueue Query " + err.Error())
+	}
+	for rows.Next() {
+		err = rows.Scan(&tstamp, &groupname, &phone, &message)
+		if err != nil {
+			return errors.New("#2 ExportQueue Scan " + err.Error())
+		}
+		message = Removebadsqlcharacters(message)
+		message = Showdebugmsg(message)
+		ts:=fmt.Sprintf("%s-%s-%s\t%s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
+		txt += fmt.Sprintf("%s\t%s\t%s\t%s\r\n", ts, groupname, phone, message)
+	}
+	if txt == "" {
+		// export sample Que!!!
+		txt = "2024-08-01\t13:50:55\ttest\t0046736290839\tThis is a test message 1\\r\\nwith 2 lines\r\n"
+		txt += "2024-08-01\t13:50:55\ttest\t0046736290839\tThis is a test message 2\\r\\nwith 3 lines\\r\\nwith 2 lines\r\n"
+		txt += "2024-08-01\t13:50:55\ttest\t0046736290839\tThis is a test message 3\r\n"
+		txt += "2024-08-01\t13:50:55\ttest\t0046736290839\tThis is a test message 4\r\n"
+	}
+	err = os.WriteFile(tofile, []byte(txt), 0644)
+	if err != nil {
+		return errors.New("#3 ExportQueue WriteFile " + err.Error())
+	}
+	return err
+}
+func (db *DBtype) CountinQueue() int {
+	var err error
+	var cnt int
+	db.Opendb()
+	r, err := db.conn.Query("SELECT COUNT(*) AS cnt FROM tblQueue")
+	if err != nil {
+		log.Println("#1 CountQueue Query failed: ", err.Error())
+		return 0
+	}
+	for r.Next() {
+		r.Scan(&cnt)
+	}
+	db.Closedatabase()
+	return cnt
+}
+func (db *DBtype) GetNextinQueue() ([]string,error) {
+	var err error
+	var id, tstamp, groupname, phone, message string
+	db.Opendb()
+	rows, err := db.conn.Query("SELECT id,tstamp,groupname,phone,message FROM tblQueue ORDER BY tstamp ASC LIMIT 1")
+	if err != nil {
+		log.Println("#1 GetNextinQueue Query failed: ", err.Error())
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(&id, &tstamp, &groupname, &phone, &message)
+		if err != nil {
+			log.Println("#2 GetNextinQueue Scan failed: ", err.Error())
+			return nil, err
+		}
+	}
+	db.Closedatabase()
+	return []string{id, tstamp, groupname, phone, message}, err
+}
+// OTHER FUNCTIONS
 func (db *DBtype) GetFname(phone string) string {
 	var firstname string
 	db.Opendb()
@@ -527,7 +816,6 @@ func (db *DBtype) GetFname(phone string) string {
 			log.Println("rows.Scan failed in GetFname")
 		}
 	}
-	db.Closedatabase()
 	return firstname
 }
 func (db *DBtype) GetLname(phone string) string {
@@ -547,14 +835,18 @@ func (db *DBtype) GetLname(phone string) string {
 			log.Println("rows.Scan failed in GetFname")
 		}
 	}
-	db.Closedatabase()
 	return lastname
 }
 func Fixphonenumber(pn string) string {
+	var cc string
+	var cci string = "00"
 	// pn phonenumber  cc coutrycode
 	// Sweden (+46) converts to 0046
-	cc := fyne.CurrentApp().Preferences().StringWithFallback("mobilecountry", "Sweden(+46)")
-	var cci string = "00"
+	if checkGUI() == false {
+		cc = "Sweden(+46)"
+	} else {
+		cc = fyne.CurrentApp().Preferences().StringWithFallback("mobilecountry", "Sweden(+46)")
+	}
 	for i := 0; i < len(cc); i++ {
 		if strings.Index("0123456789", string(cc[i])) > 0 {
 			cci += string(cc[i])

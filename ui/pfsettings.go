@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/prifre/pfsms/pfdatabase"
+	"github.com/prifre/pfsms/pfmobile"
 )
 
 var mobilemodels = []string{"Samsung S24", "Samsung S9"}
@@ -49,6 +50,7 @@ func NewSettings(w fyne.Window) *pfsettings {
 }
 func (s *pfsettings) buildMobilePart() *fyne.Container {
 	var mobileContainer *fyne.Container
+	var err error
 	s.mobileNumber = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", ""), OnChanged: func(v string) {
 		fyne.CurrentApp().Preferences().SetString("mobilenumber", v)
 	}}
@@ -72,11 +74,14 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		testmessage := fmt.Sprintf("This is a short testmessage, sent %s", t)
 		pn := fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", "")
 		pn = Fixphonenumber(pn, s.mobileCountry.Selected)
-		var sms theform = *new(theform)
-		sms.Addhash = fyne.CurrentApp().Preferences().Bool("addHash")
-		sms.Comport = fyne.CurrentApp().Preferences().StringWithFallback("mobileport", "COM2")
-		sms.groupname = &widget.Entry{Text:"settingstest"}
-		sms.SendMessages([]string{pn}, testmessage)
+		err=pfmobile.SendDirectSMS(nil,pn, testmessage)
+		if err != nil {
+			log.Println("#1 TestSMS SendDirectSMS ", err.Error())
+		} else {
+			tstamp := time.Now().Format("20060102150405")
+			new(pfdatabase.DBtype).SaveHistory([]string{tstamp,  pn,testmessage})
+			log.Println("Sent test SMS to ", pn)
+		}
 		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
 		s.logtext.Refresh()
 	}}
@@ -123,7 +128,7 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 		log.Println("Exported Customers")
 	}}
 	s.btnDeleteCustomers = &widget.Button{Text: "Delete Customers", OnTapped: func() {
-		new(pfdatabase.DBtype).DeleteCustomers()
+		new(pfdatabase.DBtype).DeleteAllCustomers()
 		log.Println("Deleted Customers")
 	}}
 	s.customersfile = &widget.Label{Text: fyne.CurrentApp().Preferences().String("customersfile")}
@@ -146,7 +151,7 @@ func (s *pfsettings) buildFilePart() *fyne.Container {
 		log.Println("Exported Groups")
 	}}
 	s.btnDeleteGroups = &widget.Button{Text: "Delete Groups", OnTapped: func() {
-		new(pfdatabase.DBtype).DeleteGroups()
+		new(pfdatabase.DBtype).DeleteAllGroups()
 		log.Println("Deleted Groups")
 	}}
 	s.groupsfile = &widget.Label{Text: fyne.CurrentApp().Preferences().String("groupsfile")}

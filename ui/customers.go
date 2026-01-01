@@ -22,7 +22,7 @@ type thetable struct {
 	window      		fyne.Window
 }
 
-func NewTable( w fyne.Window) *thetable {
+func NewCustomers( w fyne.Window) *thetable {
 	return &thetable{ window: w}
 }
 func (s *thetable) buildTableCustomers() *container.Scroll {
