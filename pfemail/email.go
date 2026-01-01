@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/prifre/pfsms/pfdatabase"
-
 	"fyne.io/fyne/v2"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
+	"github.com/prifre/pfsms/pfdatabase"
 )
 
 type Etype struct {
@@ -27,7 +26,8 @@ func (e *Etype) Connect(s1, s2, s3, s4 string) {
 	e.mport = s4
 }
 func (e *Etype) Checkemaillogin() error {
-	err := e.Login()
+	var err error
+	err = e.Login()
 	if err != nil {
 		return fmt.Errorf("Login failed")
 	}

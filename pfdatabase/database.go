@@ -507,7 +507,11 @@ func (db *DBtype) ShowHistory() [][]string {
 		if err != nil {
 			log.Println("#2 ShowHistory Scan ", err.Error())
 		}
-		r = append(r, []string{tstamp, groupname, phone, message})
+		fixtstamp:=fmt.Sprintf("%s-%s-%s %s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
+		if len(message)>40 {
+			message=message[:40]+"..."
+		}
+		r = append(r, []string{fixtstamp, groupname, phone, message})
 	}
 	db.Closedatabase()
 	return r
@@ -667,24 +671,24 @@ func (db *DBtype) DeletefromQueue(id string) error {
 }
 func (db *DBtype) ShowQueue() [][]string {
 	var r [][]string
-	var fixtstamp string
+	// var fixtstamp string
 	var err error
-	var sq, tstamp,  phone string
+	var sq, phone string
 	db.Opendb()
-	sq = "SELECT tstamp,phone FROM tblQueue ORDER BY tstamp ASC"
+	sq = "SELECT phone FROM tblQueue ORDER BY tstamp ASC"
 	rows, err := db.conn.Query(sq)
 	if err != nil {
 		log.Println("#1 ShowQueue Query ", err.Error())
 	}
 	for rows.Next() {
-		err = rows.Scan(&tstamp, &phone)
+		err = rows.Scan(&phone)
 		if err != nil {
 			log.Println("#2 ShowQueue Scan ", err.Error())
 		}
-		if len(tstamp)>13 {
-			fixtstamp=fmt.Sprintf("%s-%s-%s %s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
-		}
-		r = append(r, []string{fixtstamp, phone})
+		// if len(tstamp)>13 {
+		// 	fixtstamp=fmt.Sprintf("%s-%s-%s %s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
+		// }
+		r = append(r, []string{phone})
 	}
 	db.Closedatabase()
 	return r

@@ -10,6 +10,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 )
+
+var logfile *os.File
 func GetHomeDir() string {
 	var err error
 	var mydebug bool
@@ -51,13 +53,17 @@ func Setupfiles() {
 	fyne.CurrentApp().Preferences().SetString("historyfile", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "history.txt"))
 	fyne.CurrentApp().Preferences().SetString("pfsmsdb", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "pfsms.db"))
 	fyne.CurrentApp().Preferences().SetString("pfsmslog", fmt.Sprintf("%s%c%s", GetHomeDir(), os.PathSeparator, "pfsms.log"))
-	f, err := os.OpenFile(fyne.CurrentApp().Preferences().StringWithFallback("pfsmslog", ""), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	logfile, err = os.OpenFile(fyne.CurrentApp().Preferences().StringWithFallback("pfsmslog", ""), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic("Error opening pfsms.log:" + err.Error())
 	}
 	//	defer f.Close()
-	wrt = io.MultiWriter(os.Stdout, f)
+	wrt = io.MultiWriter(os.Stdout, logfile)
 	log.SetOutput(wrt)
+}
+func CloseLog() {
+	logfile.Close()
+	log.SetOutput(nil)
 }
 func NewBoldLabel(text string) *widget.Label {
 	return &widget.Label{Text: text, TextStyle: fyne.TextStyle{Bold: true}}
@@ -355,9 +361,11 @@ func Fixphonenumber(pn string, cc string) string {
 func ReadLastLineWithSeek(fn string, cnt int) string {
 	var err error
 	var lines string
+	CloseLog()
 	fileHandle, err := os.Open(fn)
 	if err != nil {
-		panic("Cannot open file")
+		fmt.Println("Cannot open file")
+		return ""
 	}
 	defer fileHandle.Close()
 	var cursor int64 = 0
@@ -388,6 +396,7 @@ func ReadLastLineWithSeek(fn string, cnt int) string {
 	for strings.Contains("\r\n \t",string(lines[0])) && len(lines)>1 {
 		lines = lines[1:]
 	}
+	Setupfiles()
 	return lines
 }
 func ShowShortLines(s string) string {

@@ -37,6 +37,7 @@ func NewEmail(w fyne.Window) *theemail {
 }
 func (s *theemail) buildUI() *container.Scroll {
 	var err error
+	s.logtext = &widget.Label{Text: "LogText", TextStyle: fyne.TextStyle{Bold: true}}
 
 	s.emailSLabel = &widget.Label{Text: "Email Server", TextStyle: fyne.TextStyle{Bold: true}}
 	s.emailServer = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("eserver", ""), OnChanged: func(v string) {
@@ -87,8 +88,6 @@ func (s *theemail) buildUI() *container.Scroll {
 		s.emailPLabel, s.emailPassword,
 		s.emailFLabel, s.emailFrequency,
 	)
-	m := ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 10)
-	s.logtext = &widget.Label{Text: m}
 	s.btnCheck = &widget.Button{Text: "Check Email", OnTapped: func() {
 		e := new(pfemail.Etype)
 		err = e.Checkemaillogin()
@@ -97,7 +96,7 @@ func (s *theemail) buildUI() *container.Scroll {
 		} else {
 			log.Println("Email check ok.")
 		}
-		m := ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 10)
+		m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
 		s.logtext.SetText(m)
 		s.logtext.Refresh()
 	}}
@@ -114,7 +113,6 @@ func (s *theemail) buildUI() *container.Scroll {
 			// m := "SUBJECT:" + m0[0].Envelope.Subject
 			// m += "SENDER: "+ m0[0].Envelope.Sender.Address
 			// fmt.Println("\r\nFlags: ", m0[0].Flags)		} else {
-			log.Println(m + "\r\n")
 		} else {
 			log.Println("No mail...")
 		}
@@ -124,7 +122,7 @@ func (s *theemail) buildUI() *container.Scroll {
 		} else {
 			log.Println("Moved SMS mail to sms folder.")
 		}
-		m := ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 10)
+		m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
 		s.logtext.SetText(m)
 		s.logtext.Refresh()
 	}}

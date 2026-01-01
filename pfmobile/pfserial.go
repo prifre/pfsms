@@ -25,6 +25,7 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
+	"fyne.io/fyne/v2"
 	"go.bug.st/serial"
 )
 
@@ -59,9 +60,13 @@ func Openmodemport(comport string) (serial.Port, error) {
 	var port serial.Port
 	var err error
 	if comport=="" {
-		comport,err=GetMobilePort()
-		if err!=nil {
-			return nil,errors.New("Openmodemport #0 failed: " + err.Error())
+		// comport,err=GetMobilePort()
+		comport=fyne.CurrentApp().Preferences().StringWithFallback("mobileport","" )
+		if comport=="" {
+			comport,err=GetMobilePort()
+			if err!=nil {
+				return nil,errors.New("Openmodemport #0 GetMobilePort() failed: " + err.Error())
+			}
 		}
 	}
 	// err=TestPort(comport)
@@ -167,7 +172,7 @@ func SendDirectSMS(port serial.Port, phoneNumber string, message string) error {
 			return errors.New("SendSMS #4 myread failed: " + err.Error())
 		}
 	}
-	return nil
+	return err
 }
 func SendStoredSMS(port serial.Port, phoneNumber string, message string) error {
 	var pduarray []string
@@ -282,10 +287,9 @@ func myread(port serial.Port,response string,timeout int) (string,error) {
 		if time.Since(myreadtimestart) > myreadtimeout {
 			myreadtimestart = time.Now()
 			timeout--
-            log.Printf("myread timeout %dms, waiting for %d (got '%s').\r\n", time.Since(startTime).Milliseconds(),timeout,showdebugmsg(r))
 		}
 		if timeout<=0 {
-            return r,fmt.Errorf("myread timeout exceeded, no expected response: %s within %d seconds (got '%s')", response, timeout, showdebugmsg(r))
+            return r,fmt.Errorf("myread started %s timeout exceeded, no expected response: %s within %d seconds (got '%s')", startTime,response, timeout, showdebugmsg(r))
         }
 	}
 	return r,err

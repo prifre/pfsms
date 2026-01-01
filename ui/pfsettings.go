@@ -74,16 +74,19 @@ func (s *pfsettings) buildMobilePart() *fyne.Container {
 		testmessage := fmt.Sprintf("This is a short testmessage, sent %s", t)
 		pn := fyne.CurrentApp().Preferences().StringWithFallback("mobilenumber", "")
 		pn = Fixphonenumber(pn, s.mobileCountry.Selected)
-		err=pfmobile.SendDirectSMS(nil,pn, testmessage)
+		err=pfmobile.SendDirectSMS(nil,pn, testmessage+"\r\n#=1")
 		if err != nil {
-			log.Println("#1 TestSMS SendDirectSMS ", err.Error())
+			log.Println("#1 TestSMS SendDirectSMS #1 failed: ", err.Error())
 		} else {
 			tstamp := time.Now().Format("20060102150405")
-			new(pfdatabase.DBtype).SaveHistory([]string{tstamp,  pn,testmessage})
+			err=new(pfdatabase.DBtype).SaveHistory([]string{tstamp,"TestSMS",pn,testmessage})
+			if err!=nil {
+				log.Println("btnTestSMS SaveHistory failed: ",err.Error())
+			}
 			log.Println("Sent test SMS to ", pn)
+			s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
+			fyne.DoAndWait(s.logtext.Refresh)
 		}
-		s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
-		s.logtext.Refresh()
 	}}
 	fyne.CurrentApp().Preferences().SetString("mobileport", s.mobilePort.Text)
 	mobileContainer = container.NewGridWithColumns(2,
@@ -202,7 +205,7 @@ func (s *pfsettings) buildUI() *container.Scroll {
 	s.logtext = widget.NewMultiLineEntry()
 	s.logtext.SetMinRowsVisible(6)
 	s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
-	s.logtext.Refresh()
+	fyne.DoAndWait(s.logtext.Refresh)
 
 	return container.NewScroll(container.NewVBox(
 		&widget.Card{Title: "Mobile Settings", Content: s.buildMobilePart()},

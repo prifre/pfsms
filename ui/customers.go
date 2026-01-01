@@ -26,10 +26,8 @@ func NewCustomers( w fyne.Window) *thetable {
 	return &thetable{ window: w}
 }
 func (s *thetable) buildTableCustomers() *container.Scroll {
-	if s.dataAllCustomers==nil {
-		s.dataCustomers=new(pfdatabase.DBtype).ShowCustomers()
-		s.dataAllCustomers=s.dataCustomers
-	}
+	s.dataCustomers=new(pfdatabase.DBtype).ShowCustomers()
+	s.dataAllCustomers=s.dataCustomers
 	s.tableCustomers = widget.NewTable(nil,nil,nil)
 	s.tableCustomers.Length = func() (int, int) {	
 		if len(s.dataCustomers)<=0 {
@@ -51,8 +49,7 @@ func (s *thetable) buildTableCustomers() *container.Scroll {
 }
 func (s *thetable) buildTableGroups() *container.Scroll {
 	//	var data = [][]string{{"A1", "B1"},{"A2", "B2"},{"A3", "B3"},{"A4", "B4"},{"A5", "B5"}}
-	d:=new(pfdatabase.DBtype)
-	s.dataAllGroups =d.ShowAllGroups()
+	s.dataAllGroups =new(pfdatabase.DBtype).ShowAllGroups()
 	s.dataAllGroups = append(s.dataAllGroups,[]string{"All customers...",""})
 	s.dataGroups =new(pfdatabase.DBtype).ShowGroups()
 	s.dataGroups = append(s.dataGroups,"All customers...")
