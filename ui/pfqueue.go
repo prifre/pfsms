@@ -146,9 +146,8 @@ func (s *theQueue) SendQueuedMessages() error {
 		if err!=nil {
 			return errors.New("SendQueuedMessages #5 SaveHistory failed for phone " + phoneNumber + ": " + err.Error())
 		}
-		fyne.DoAndWait(s.RefreshTables)
 		log.Printf("Message %d/%d to phone %s sent! \r\n", success, tot, phoneNumber)
-		// }
+		s.RefreshTables()
 	}
 	return err
 }
@@ -192,7 +191,7 @@ func (s *theQueue) SimulateSendMessages() error {
 		if err!=nil {
 			return errors.New("SendSMS SaveHistory failed for phone " + phoneNumber + ": " + err.Error())
 		}
-		fyne.DoAndWait(s.RefreshTables)
+		s.RefreshTables()
 		log.Printf("Simlated Message %d/%d to phone %s sent!\r\n", success, tot, phoneNumber)
 		time.Sleep(time.Second*5) // Sleeping here is fine because it's in a goroutine
 	}
