@@ -33,11 +33,11 @@ type theQueue struct {
 	btnDeleteQueue      *widget.Button
 	btnDeleteOnefromQueue	*widget.Button
 	btnExportHistory	*widget.Button
+	CountinQueue  *widget.Label
 	Phone    string
 	Fname    string
 	Lname    string
 	Message  string
-	logtext  *widget.Label
 	mydebug   bool
 	Comport   string
 	starttime time.Time
@@ -64,7 +64,9 @@ func (s *theQueue) buildTableQueue() *container.Scroll {
 	}
 	// s.tableQueue.SetColumnWidth(0,s.window.Content().Size().Width*0.25)	//tstamp
 	// s.tableQueue.SetColumnWidth(1,s.window.Content().Size().Width*0.10)	//groupname
-	s.tableQueue.SetColumnWidth(0,s.window.Content().Size().Width*0.20)	//phone
+	s.tableQueue.SetColumnWidth(0,s.window.Content().Size().Width*0.12)	//phone
+	s.tableQueue.SetColumnWidth(1,s.window.Content().Size().Width*0.07)	//fname
+	s.tableQueue.SetColumnWidth(2,s.window.Content().Size().Width*0.07)	//lname
 	// s.tableQueue.SetColumnWidth(3,s.window.Content().Size().Width*0.45)	//message
 	s.tableQueue.Refresh()
 	return container.NewScroll(s.tableQueue)
@@ -110,6 +112,7 @@ func (s *theQueue) SendQueuedMessages() error {
 	db:=new(pfdatabase.DBtype)
 	var id string
 	var tot = db.CountinQueue()
+	s.CountinQueue.Text=fmt.Sprintf("%d",tot)
 	for db.CountinQueue()>0 {
 	// pfmobile.Modemcommand(port,"AT+CMMS=2\r","OK",time.Second*2,"Quicksend start",nil)
 		rec,err:= db.GetNextinQueue()
@@ -147,7 +150,9 @@ func (s *theQueue) SendQueuedMessages() error {
 			return errors.New("SendQueuedMessages #5 SaveHistory failed for phone " + phoneNumber + ": " + err.Error())
 		}
 		log.Printf("Message %d/%d to phone %s sent! \r\n", success, tot, phoneNumber)
-		s.RefreshTables()
+		fyne.DoAndWait(func() {
+			s.RefreshTables()
+		})
 	}
 	return err
 }
@@ -213,6 +218,10 @@ func (s *theQueue) buildUI() *container.Scroll {
 			if err != nil {
 				log.Println("Error Simulated sending messages: ", err.Error())
 			}
+			fyne.DoAndWait(func() {
+				s.tableQueue.Refresh()
+				s.tableQueue.ScrollToBottom()
+			})
 		}()
     })
     s.btnDeleteQueue = widget.NewButton("Clear Whole Queue", func() {
@@ -221,13 +230,23 @@ func (s *theQueue) buildUI() *container.Scroll {
         if err != nil {
             log.Println("Error sending messages from queue: ", err.Error())
         }
+		fyne.DoAndWait(func() {
+			s.tableQueue.Refresh()
+			s.tableQueue.ScrollToBottom()
+		})
     })
     s.btnDeleteOnefromQueue = widget.NewButton("Clear One from Queue", func() {
 		db:=new(pfdatabase.DBtype)
 		rec,_ := db.GetNextinQueue()
 		db.DeletefromQueue(rec[0])
-		s.RefreshTables()
-    })
+		if err != nil {
+			log.Println("Error deleting from queue: ", err.Error())
+		}
+		go func() {
+			s.tableQueue.Refresh()
+			s.tableQueue.ScrollToBottom()
+		}()
+	})
 	s.btnExportHistory = widget.NewButton("Export History", func() {
 		new(pfdatabase.DBtype).ExportHistory(fyne.CurrentApp().Preferences().String("historyfile"))
 		s.RefreshTables()
@@ -239,14 +258,15 @@ func (s *theQueue) buildUI() *container.Scroll {
 	// 	&widget.Card{Title: "History", Content:s.buildTableHistory()})
     // split.Offset = 0.6 // Ger 60% av platsen till kön som standard
 	// Skapa vänster sida (Queue)
-	queueView := container.NewBorder(NewBoldLabel("Queue"), nil, nil, nil, s.buildTableQueue())
+	top1:="Queue\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Fname\u00A0\u00A0\u00A0\u00A0Lname\u00A0\u00A0\u00A0\u00A0"
+	queueView := container.NewBorder(NewBoldLabel(top1), nil, nil, nil, s.buildTableQueue())
 
 	// Skapa höger sida (History)
 	historyView := container.NewBorder(NewBoldLabel("History"), nil, nil, nil, s.buildTableHistory())
 
 	// Lägg in dem i din split
 	split := container.NewHSplit(queueView, historyView)
-	split.Offset = 0.2
+	split.Offset = 0.3
     // return container.NewBorder(
 	// 	NewBoldLabel("Queue                           History"),         // Topp
     //     s.btnSubmit, // Botten
@@ -256,7 +276,7 @@ func (s *theQueue) buildUI() *container.Scroll {
     // )
 	return container.NewScroll(container.NewBorder(
 		nil,         // Topp
-        container.NewHBox(s.btnSubmit,s.btnSubmit2,s.btnDeleteQueue,s.btnDeleteOnefromQueue),	// Botten
+        container.NewHBox(s.btnSubmit,s.btnSubmit2,s.btnDeleteQueue,s.btnDeleteOnefromQueue,s.CountinQueue),	// Botten
         nil,         // Vänster
 		nil,	// Höger
 		split,
@@ -266,12 +286,11 @@ func (s *theQueue) RefreshTables() {
 	s.dataQueue = new(pfdatabase.DBtype).ShowQueue()
 	s.dataHistory = new(pfdatabase.DBtype).ShowHistory()
     // // Säg till den EXISTERANDE tabellen att rita om sig
-	s.tableQueue.ScrollToBottom()
-	s.tableHistory.ScrollToBottom()
     s.tableQueue.Refresh()
-	s.tableHistory.Refresh()
 	s.tableQueue.ScrollToBottom()
+	s.tableHistory.Refresh()
 	s.tableHistory.ScrollToBottom()
+	s.CountinQueue.Text=fmt.Sprintf("%d", new(pfdatabase.DBtype).CountinQueue())
  	// s.window.Canvas().Refresh(s.tableQueue)
 	// s.window.Canvas().Refresh(s.tableHistory)
 }

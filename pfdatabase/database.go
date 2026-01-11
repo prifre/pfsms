@@ -673,22 +673,23 @@ func (db *DBtype) ShowQueue() [][]string {
 	var r [][]string
 	// var fixtstamp string
 	var err error
-	var sq, phone string
+	var sq, phone, fname, lname string
 	db.Opendb()
-	sq = "SELECT phone FROM tblQueue ORDER BY tstamp ASC"
+//	sq = "SELECT phone,fname,lname FROM tblQueue ORDER BY tstamp ASC"
+	sq = "SELECT q.phone, c.firstname, c.lastname FROM tblQueue AS q JOIN tblCustomers AS c ON q.phone = c.phone ORDER BY q.tstamp ASC"
 	rows, err := db.conn.Query(sq)
 	if err != nil {
 		log.Println("#1 ShowQueue Query ", err.Error())
 	}
 	for rows.Next() {
-		err = rows.Scan(&phone)
+		err = rows.Scan(&phone, &fname, &lname)
 		if err != nil {
 			log.Println("#2 ShowQueue Scan ", err.Error())
 		}
 		// if len(tstamp)>13 {
 		// 	fixtstamp=fmt.Sprintf("%s-%s-%s %s:%s:%s",tstamp[0:4],tstamp[4:6],tstamp[6:8],tstamp[8:10],tstamp[10:12],tstamp[12:14])
 		// }
-		r = append(r, []string{phone})
+		r = append(r, []string{phone, fname, lname})
 	}
 	db.Closedatabase()
 	return r

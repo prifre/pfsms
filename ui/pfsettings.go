@@ -205,8 +205,6 @@ func (s *pfsettings) buildUI() *container.Scroll {
 	s.logtext = widget.NewMultiLineEntry()
 	s.logtext.SetMinRowsVisible(6)
 	s.logtext.Text = ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 6)
-	fyne.DoAndWait(s.logtext.Refresh)
-
 	return container.NewScroll(container.NewVBox(
 		&widget.Card{Title: "Mobile Settings", Content: s.buildMobilePart()},
 		&widget.Card{Title: "File Settings", Content: s.buildFilePart()},

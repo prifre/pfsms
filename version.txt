@@ -1,6 +1,10 @@
 Version info
-check Gorutines!
-check why "not debug" does not send stuff... not work
+2026-01-09
+Version with Gorutines seems to send off ok
+queue to history works
+queue should have Firstname & Lastname available
+
+check out Gorutines!
 
 2024-09-09
 removed pfemail
