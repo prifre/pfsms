@@ -5,6 +5,7 @@ on: [push]
 jobs:
   build-mac:
     runs-on: macos-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,13 +18,13 @@ jobs:
       - name: Install Fyne CLI
         run: go install fyne.io/fyne/v2/cmd/fyne@latest
 
-      - name: Build macOS App
+      - name: Build macOS App Bundle
         run: |
-          CGO_ENABLED=1 $(go env GOPATH)/bin/fyne package -os darwin
+          CGO_ENABLED=1 $(go env GOPATH)/bin/fyne package -os darwin -appID com.prifre.pfsms -icon ui/pfsms.png
 
-      - name: Pack to Zip
+      - name: Pack App to Zip
         run: |
-          zip -r pfsms_mac.zip *.app
+          zip -r pfsms_mac.zip pfsms.app
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4

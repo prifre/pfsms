@@ -13,7 +13,7 @@ import (
 var appIconBytes []byte
 
 func main() {
-	a := app.NewWithID("pfsms")
+	a := app.NewWithID("com.prifre.pfsms")
 
 	// Sätt applikationens ikon från inbäddad bild
 	if len(appIconBytes) > 0 {
