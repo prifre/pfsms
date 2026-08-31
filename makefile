@@ -25,14 +25,14 @@ fetch-artifacts: build-local
 	@git add .
 	@git commit -m "Auto-build release v$(VERSION)" || true
 	@git push
-	@echo "Väntar på att GitHub Actions ska starta (8 sekunder)..."
-	@sleep 8
+	@echo "Väntar på att GitHub Actions ska registrera nypushade ändringar..."
+	@sleep 10
 	@BUILD_ID=$$(gh run list --limit 1 --json databaseId -q '.[0].databaseId') ; \
-	echo "Bevakar GitHub Run ID: $$BUILD_ID..." ; \
+	echo "Bevakar senaste GitHub Run ID: $$BUILD_ID..." ; \
 	gh run watch $$BUILD_ID
 	@echo "Hämtar artifacts från GitHub..."
 	@gh run download --name pfsms-macOS --dir $(BUILD_DIR_MAC) || echo "Varning: Kunde inte hämta macOS artifact."
-	
+		
 # 3. Kopiera readme och packa alla plattformar till public_html
 .PHONY: pack
 pack: fetch-artifacts
