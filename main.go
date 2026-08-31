@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 )
 
-//go:embed ui/pfsms.png
+//go:embed resources/pfsms.png
 var appIconBytes []byte
 
 func main() {
