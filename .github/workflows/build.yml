@@ -3,7 +3,6 @@ name: Build macOS Release
 on: [push]
 
 jobs:
-  # JOBB 1: macOS (Din gamla mall, uppdaterad för PATH)
   build-mac:
     runs-on: macos-latest
     steps:
@@ -20,7 +19,7 @@ jobs:
 
       - name: Build macOS App
         run: |
-          $(go env GOPATH)/bin/fyne package -os darwin
+          CGO_ENABLED=1 $(go env GOPATH)/bin/fyne package -os darwin
 
       - name: Pack to Zip
         run: |
