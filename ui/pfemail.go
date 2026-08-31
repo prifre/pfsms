@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 
+	"pfsms/general"
+	"pfsms/pfdatabase"
+	"pfsms/pfemail"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/prifre/pfsms/pfdatabase"
-	"github.com/prifre/pfsms/pfemail"
 )
 
 type theemail struct {
@@ -35,10 +37,12 @@ type theemail struct {
 func NewEmail(w fyne.Window) *theemail {
 	return &theemail{window: w}
 }
-func (s *theemail) buildUI() *container.Scroll {
-	var err error
-	s.logtext = &widget.Label{Text: "LogText", TextStyle: fyne.TextStyle{Bold: true}}
 
+func (s *theemail) buildEmail() *container.Scroll {
+	// log.Println("buildEmail")
+	var err error
+	var m string
+	s.logtext = &widget.Label{Text: "LogText", TextStyle: fyne.TextStyle{Bold: true}}
 	s.emailSLabel = &widget.Label{Text: "Email Server", TextStyle: fyne.TextStyle{Bold: true}}
 	s.emailServer = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("eserver", ""), OnChanged: func(v string) {
 		fyne.CurrentApp().Preferences().SetString("eserver", s.emailServer.Text)
@@ -47,7 +51,6 @@ func (s *theemail) buildUI() *container.Scroll {
 	s.emailPort = &widget.Entry{Text: fyne.CurrentApp().Preferences().StringWithFallback("eport", "993"), OnChanged: func(v string) {
 		v0 := ""
 		for i := 0; i < len(v); i++ {
-
 			if v[i] >= '0' && v[i] <= '9' {
 				v0 = v0 + string(v[i])
 			}
@@ -65,17 +68,21 @@ func (s *theemail) buildUI() *container.Scroll {
 		s.setPassword(s.emailPassword.Text)
 	}}
 	s.emailPassword.Password = true
-	s.emailFLabel = &widget.Label{Text: fmt.Sprintf("Email frequency (%d min)", int(fyne.CurrentApp().Preferences().FloatWithFallback("efrequency", 10))),
-		TextStyle: fyne.TextStyle{Bold: true}}
-	s.emailFrequency = &widget.Slider{Value: fyne.CurrentApp().Preferences().FloatWithFallback("efrequency", 10),
-		Min: 1.0, Max: 60.0, Step: 1,
+	s.emailFLabel = &widget.Label{
+		Text:      fmt.Sprintf("Email frequency (%d min)", int(fyne.CurrentApp().Preferences().FloatWithFallback("efrequency", 10))),
+		TextStyle: fyne.TextStyle{Bold: true},
+	}
+	s.emailFrequency = &widget.Slider{
+		Value: fyne.CurrentApp().Preferences().FloatWithFallback("efrequency", 10),
+		Min:   1.0, Max: 60.0, Step: 1,
 		OnChanged: func(i float64) {
 			s.emailFLabel.SetText(fmt.Sprintf("Email frequency (%d min)", int(i)))
 		},
 		OnChangeEnded: func(i float64) {
 			s.emailFrequency.Value = i
 			fyne.CurrentApp().Preferences().SetFloat("efrequency", i)
-		}}
+		},
+	}
 	s.useEmail = &widget.RadioGroup{Options: []string{"On", "Off"}, Horizontal: true, Required: true, OnChanged: s.onUseEmailChanged}
 	s.useEmail.SetSelected(fyne.CurrentApp().Preferences().StringWithFallback("useemail", "Off"))
 	s.onUseEmailChanged(fyne.CurrentApp().Preferences().StringWithFallback("useemail", "Off"))
@@ -96,7 +103,10 @@ func (s *theemail) buildUI() *container.Scroll {
 		} else {
 			log.Println("Email check ok.")
 		}
-		m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
+		m, err := general.ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 10)
+		if err != nil {
+			log.Println("Read log failed.")
+		}
 		s.logtext.SetText(m)
 		s.logtext.Refresh()
 	}}
@@ -122,7 +132,10 @@ func (s *theemail) buildUI() *container.Scroll {
 		} else {
 			log.Println("Moved SMS mail to sms folder.")
 		}
-		m:=ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"),10)
+		m, err = general.ReadLastLineWithSeek(fyne.CurrentApp().Preferences().String("pfsmslog"), 10)
+		if err != nil {
+			log.Println("Read log failed.")
+		}
 		s.logtext.SetText(m)
 		s.logtext.Refresh()
 	}}
@@ -149,6 +162,7 @@ func (s *theemail) onUseEmailChanged(selected string) {
 	s.emailFrequency.Hidden = (fyne.CurrentApp().Preferences().StringWithFallback("useemail", "Off") == "Off")
 	s.emailFLabel.Hidden = (fyne.CurrentApp().Preferences().StringWithFallback("useemail", "Off") == "Off")
 }
+
 func (s *theemail) getPassword() string {
 	prefPassword := fyne.CurrentApp().Preferences().StringWithFallback("epassword", "")
 	var hash, realPassword string
@@ -163,6 +177,7 @@ func (s *theemail) getPassword() string {
 	}
 	return realPassword
 }
+
 func (s *theemail) setPassword(realPassword string) error {
 	var hash, prefPassword string
 	var err error
@@ -177,6 +192,7 @@ func (s *theemail) setPassword(realPassword string) error {
 	fyne.CurrentApp().Preferences().SetString("epassword", prefPassword)
 	return err
 }
+
 func (s *theemail) tabItem() *container.TabItem {
-	return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildUI()}
+	return &container.TabItem{Text: "Email", Icon: theme.ComputerIcon(), Content: s.buildEmail()}
 }

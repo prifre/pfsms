@@ -1,23 +1,37 @@
 package main
 
-//Main file
-
 import (
-	"github.com/prifre/pfsms/ui"
+	_ "embed"
+
+	"pfsms/ui"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 )
 
+//go:embed ui/pfsms.png
+var appIconBytes []byte
 
 func main() {
-	var wx,wy float32
 	a := app.NewWithID("pfsms")
+
+	// Sätt applikationens ikon från inbäddad bild
+	if len(appIconBytes) > 0 {
+		iconRes := fyne.NewStaticResource("pfsms.png", appIconBytes)
+		a.SetIcon(iconRes)
+	}
+
 	w := a.NewWindow("pfsms")
-	wx=1024
-	wy=768
-	w.Canvas().Content().Resize(fyne.NewSize(wx,wy))
-	w.Resize(fyne.NewSize(wx,wy))
+
+	// 1. Sätt innehållet
 	w.SetContent(ui.Create(w))
+
+	// 2. Sätt storleken på fönstret
+	w.Resize(fyne.NewSize(1024, 768))
+
+	// Centrera fönstret på skärmen
+	w.CenterOnScreen()
+
+	// 3. Visa och starta applikationen
 	w.ShowAndRun()
 }

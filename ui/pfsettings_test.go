@@ -6,26 +6,28 @@ import (
 	"runtime"
 	"testing"
 
+	"pfsms/general"
+	"pfsms/pfdatabase"
+
 	"fyne.io/fyne/v2"
-	"github.com/prifre/pfsms/pfdatabase"
 )
 
 func TestImportCustomers(t *testing.T) {
-	Setupfiles()
+	general.Setupfiles()
 	new(pfdatabase.DBtype).ImportCustomers(fyne.CurrentApp().Preferences().String("customersfile"))
 	new(pfdatabase.DBtype).ExportCustomers(fyne.CurrentApp().Preferences().String("customersfile"))
 }
 func TestImportGroups(t *testing.T) {
-	Setupfiles()
+	general.Setupfiles()
 	new(pfdatabase.DBtype).ImportGroups(fyne.CurrentApp().Preferences().String("groupsfile"))
 	new(pfdatabase.DBtype).ExportGroups(fyne.CurrentApp().Preferences().String("groupsfile"))
 }
 func TestExportHistory(t *testing.T) {
-	Setupfiles()
+	general.Setupfiles()
 	new(pfdatabase.DBtype).ExportHistory(fyne.CurrentApp().Preferences().String("historyfile"))
 }
 func TestOpenLog(t *testing.T) {
-	Setupfiles()
+	general.Setupfiles()
 	dd := fyne.CurrentApp().Preferences().String("pfsmslog")
 	// dd,_:=os.UserHomeDir()
 	// dd = fmt.Sprintf("%s%c%s%c%s",dd,os.PathSeparator,"pfsms",os.PathSeparator,fn)

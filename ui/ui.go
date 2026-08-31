@@ -1,41 +1,46 @@
 package ui
 
 import (
+	"pfsms/general"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 )
 
-// Create will stitch together all ui components
+// Create syr ihop alla UI-komponenter och returnerar huvudflikarna
 func Create(window fyne.Window) *container.AppTabs {
 	fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
-	Setupfiles()
-	var tabs []*container.TabItem = []*container.TabItem{
-		NewCustomers(window).tabItem(),
-		NewMessages(window).tabItem(),
-		NewQueue(window).tabItem(),
-		NewEmail(window).tabItem(),
-		NewSettings(window).tabItem(),
-		NewAbout(window).tabItem(),
-	}
-	at := container.AppTabs{Items: tabs}
+	general.Setupfiles()
+
+	// Skapa vyerna en gång
+	customersView := NewCustomers(window)
+	messagesView := NewMessages(window)
+	queueView := NewQueue(window)
+	//	emailView := NewEmail(window)
+	settingsView := NewSettings(window)
+	aboutView := NewAbout(window)
+
+	// Skapa flik-objektet med Fynes inbyggda konstruktor
+	at := container.NewAppTabs(
+		customersView.TabItem(),
+		messagesView.TabItem(),
+		queueView.TabItem(),
+		//		emailView.TabItem(),
+		settingsView.TabItem(),
+		aboutView.TabItem(),
+	)
+
+	// Om du vill göra något när en flik väljs (t.ex. uppdatera data)
 	at.OnSelected = func(t *container.TabItem) {
-		switch t.Text {
-		case "Customers":
-			tabs[0] = NewCustomers(window).tabItem()
-		case "Messages":
-			tabs[1] = NewMessages(window).tabItem()
-		case "Queue":
-			tabs[2] = NewQueue(window).tabItem()
-		case "Email":
-			tabs[3] = NewEmail(window).tabItem()
-		case "Settings":
-			tabs[4] = NewSettings(window).tabItem()
-		case "About pfsms":
-			tabs[5] = NewAbout(window).tabItem()
-		default:
+		switch t {
+		case at.Items[0]:
+			customersView.RefreshData() // Exempel: Ladda om kundlistan från databasen
+		case at.Items[1]:
+			messagesView.RefreshData()
+		case at.Items[2]:
+			queueView.RefreshTables()
 		}
 	}
-	return &at
+	return at
 }
-

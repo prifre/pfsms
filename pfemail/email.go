@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
-	"github.com/prifre/pfsms/pfdatabase"
 )
 
 type Etype struct {
@@ -16,7 +15,6 @@ type Etype struct {
 	mserver string
 	mport   string
 	c       *client.Client
-	// mfrequency	int
 }
 
 func (e *Etype) Connect(s1, s2, s3, s4 string) {
@@ -25,28 +23,19 @@ func (e *Etype) Connect(s1, s2, s3, s4 string) {
 	e.pword = s3
 	e.mport = s4
 }
+
 func (e *Etype) Checkemaillogin() error {
-	var err error
-	err = e.Login()
+	err := e.Login()
 	if err != nil {
-		return fmt.Errorf("Login failed")
+		return fmt.Errorf("login failed: %w", err)
 	}
 	e.c.Logout()
 	return nil
 }
+
 func (e *Etype) Login() error {
-	var hash string
-	var err error
 	if e.pword == "" {
-		hash, err = pfdatabase.MakeHash()
-		if err != nil {
-			log.Println("buildLog MakeHash error ", err.Error())
-		}
-		passwdstring := fyne.CurrentApp().Preferences().StringWithFallback("epassword", "")
-		e.pword, err = pfdatabase.DecryptPassword(passwdstring, hash)
-		if err != nil {
-			log.Println("Decryptpassword error ", err.Error())
-		}
+		e.pword = fyne.CurrentApp().Preferences().StringWithFallback("epassword", "")
 		e.mserver = fyne.CurrentApp().Preferences().StringWithFallback("eserver", "")
 		e.uname = fyne.CurrentApp().Preferences().StringWithFallback("euser", "")
 		e.mport = fyne.CurrentApp().Preferences().StringWithFallback("eport", "993")
@@ -54,83 +43,96 @@ func (e *Etype) Login() error {
 			e.mport = "993"
 		}
 	}
-	// Connect to server
+
+	// Anslut till servern
+	var err error
 	e.c, err = client.DialTLS(fmt.Sprintf("%s:%s", e.mserver, e.mport), nil)
 	if err != nil {
-		log.Println("#1 Login ", err)
+		log.Println("#1 Login DialTLS error:", err)
 		return err
 	}
 	log.Println("Connected to server, checking login")
 
-	// Login
+	// Logga in
 	err = e.c.Login(e.uname, e.pword)
 	if err != nil {
-		log.Println("#1 Login failed: " + err.Error())
+		log.Println("#2 Login failed:", err)
+		e.c.Close()
 		return err
 	}
-	log.Println("Logged in")
-	return err
+	log.Println("Logged in successfully")
+	return nil
 }
+
 func (e *Etype) ListMailboxes() []string {
+	if err := e.Login(); err != nil {
+		return nil
+	}
+	defer e.c.Logout()
+
 	var mb []string
-	// List mailboxes
-	e.Login()
 	mailboxes := make(chan *imap.MailboxInfo, 10)
 	done := make(chan error, 1)
+
 	go func() {
 		done <- e.c.List("", "*", mailboxes)
 	}()
 
-	log.Println("Mailboxes:")
 	for m := range mailboxes {
-		mb = append(mb, string(m.Name))
+		mb = append(mb, m.Name)
 	}
 
 	if err := <-done; err != nil {
-		log.Println("#1 ListMailboxes ", err)
+		log.Println("#1 ListMailboxes error:", err)
 		return nil
 	}
-	done = nil
-	e.c.Logout()
+
 	return mb
 }
+
 func (e *Etype) Createmailboxfolder(f string) error {
-	var err error
-	e.Login()
-	err = e.c.Create("INBOX." + f)
-	if err != nil {
-		fmt.Println("#1 Create ", err.Error())
+	if err := e.Login(); err != nil {
 		return err
 	}
+	defer e.c.Logout()
+
+	err := e.c.Create("INBOX." + f)
+	if err != nil {
+		log.Println("#1 Create mailbox error:", err)
+		return err
+	}
+
 	err = e.c.Expunge(nil)
 	if err != nil {
-		fmt.Println("#2 Expunge ", err.Error())
+		log.Println("#2 Expunge error:", err)
 		return err
 	}
-	e.c.Logout()
-	return err
+
+	return nil
 }
+
 func (e *Etype) Getallsmsmail() []*imap.Message {
-	// Select INBOX
-	var err error
-	err = e.Login()
-	if err != nil {
-		log.Println("ERROR ", err.Error())
-	}
-	fmt.Println(e.c)
-	var imsgs []*imap.Message
-	_, err = e.c.Select("INBOX", false)
-	if err != nil {
-		log.Println("#1 Getallsmsmail", err)
+	if err := e.Login(); err != nil {
+		log.Println("#0 Getallsmsmail Login error:", err)
 		return nil
 	}
+	defer e.c.Logout()
+
+	var imsgs []*imap.Message
+	_, err := e.c.Select("INBOX", false)
+	if err != nil {
+		log.Println("#1 Getallsmsmail Select error:", err)
+		return nil
+	}
+
 	criteria := imap.NewSearchCriteria()
 	criteria.Text = []string{"TEST 123"}
 	ids, err := e.c.Search(criteria)
 	if err != nil {
-		log.Println("#2 Getallsmsmail", err)
+		log.Println("#2 Getallsmsmail Search error:", err)
 		return nil
 	}
+
 	log.Println("IDs found:", ids)
 	if len(ids) > 0 {
 		seqset := new(imap.SeqSet)
@@ -138,45 +140,61 @@ func (e *Etype) Getallsmsmail() []*imap.Message {
 		items := []imap.FetchItem{imap.FetchEnvelope}
 		messages := make(chan *imap.Message, 10)
 		done := make(chan error, 1)
+
 		go func() {
 			done <- e.c.Fetch(seqset, items, messages)
 		}()
+
 		for msg := range messages {
 			imsgs = append(imsgs, msg)
-			log.Println("* " + msg.Envelope.Subject)
+			if msg.Envelope != nil {
+				log.Println("* " + msg.Envelope.Subject)
+			}
 		}
+
 		if err := <-done; err != nil {
-			log.Println("#3 Getallsmsmail", err)
+			log.Println("#3 Getallsmsmail Fetch error:", err)
 			return nil
 		}
-		e.c.Move(seqset, "INBOX.sms")
+
+		if err := e.c.Move(seqset, "INBOX.sms"); err != nil {
+			log.Println("#4 Getallsmsmail Move error:", err)
+		}
 	}
-	e.c.Logout()
+
 	return imsgs
 }
+
 func (e *Etype) Moveallsmsmail() error {
-	// Select INBOX
-	e.Login()
-	var err error
-	_, err = e.c.Select("INBOX", false)
-	if err != nil {
-		log.Println("#1 Moveallsmsmail ", err)
+	if err := e.Login(); err != nil {
 		return err
 	}
+	defer e.c.Logout()
+
+	_, err := e.c.Select("INBOX", false)
+	if err != nil {
+		log.Println("#1 Moveallsmsmail Select error:", err)
+		return err
+	}
+
 	criteria := imap.NewSearchCriteria()
 	criteria.Text = []string{"sms", "SMS", "sms*", "SMS*"}
-	var ids []uint32
 
-	ids, err = e.c.Search(criteria)
+	ids, err := e.c.Search(criteria)
 	if err != nil {
-		log.Println("#2 Moveallsmsmail ", err)
+		log.Println("#2 Moveallsmsmail Search error:", err)
 		return err
 	}
+
 	if len(ids) > 0 {
 		seqset := new(imap.SeqSet)
 		seqset.AddNum(ids...)
 		err = e.c.Move(seqset, "INBOX.sms")
+		if err != nil {
+			log.Println("#3 Moveallsmsmail Move error:", err)
+			return err
+		}
 	}
-	e.c.Logout()
-	return err
+
+	return nil
 }

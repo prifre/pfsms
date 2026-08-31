@@ -1,68 +1,68 @@
+# PFSMS
 
-# pfsms #
+PFSMS is a desktop tool for sending bulk SMS messages using a mobile phone connected to your computer via USB.
 
-### Introduction ###
-PFSMS is a tool for sending multiple SMS messages using a Mobile Phone connected via USB.
-Since I myself use a Samsung Galaxy Phone, it is specifically configured for this phohne, but it should
-also work with other Phones supporting 3GPP AT-command set specifictions.
-To enable AT-commands on my Samsung Galaxy phone, I need to 
-(https://www.samsung.com/uk/support/mobile-devices/how-do-i-turn-on-the-developer-options-menu-on-my-samsung-galaxy-device/):
-1 Go to "Settings"
-2 Tap "About device" or "About phone"
-3 Tap “Software information”
-4 Tap “Build number” seven times. ...
-5 Enter your pattern, PIN or password to enable the Developer options menu.
-6 The "Developer options" menu will now appear in your Settings menu.
-7 Then Scroll down amont options until "Error handling" and below there somewhere you will see: "3GPP AT-commands". Turn this option ON !
-8 USB-standardkonfiguration: Överföra filer
-9 Enable USB Debugging.
-10 Disable "Auto Blocker": "Auto Blocker" security feature prevent serial/USB commands. Go to Settings > Security and Privacy > Auto Blocker and turn it Off.
+It is tailored and optimized for modern Samsung Galaxy devices (e.g., S24 Ultra), but it works with any phone supporting the standard **3GPP AT-command set**.
 
-Also make sure that you have installed Samsung USB Drivers on your computer.
-https://developer.samsung.com/android-usb-driver
+---
 
+## 📱 Device Setup (Samsung Galaxy)
 
-### SMS messaging ###
-To send an sms, just go to Message tab and paste desired phonenumbers separated by commas (,).
-To add a group, specifya groupname and click "Save Group".
-To make a copy of a group, select the group, change the groupname and click "Save Group".
-Groups are saved into the Groups database, see below. Groups can also be exported and imported.
+To allow PFSMS to communicate with your Samsung phone via serial AT-commands, follow these steps:
 
-### Customers handling ###
-It should be simple to handle, so it is not intended to be some kind of sms customer management system.
-Therefore, all customer handling is recommended to be done using "Import/Export Customers" via a textfile.
-All files are tab-separated textfiles and a sample can easily be obtained by exporting Customers.
-The idea is to maintain the database of customers using some other solution (Google Sheets in my case).
-The Customers database contains fields: id, phone, firstname, lastname, note.
-When importing, all customers with incorrect or missing phonenumber will be skipped.
-Only unique phonenumbers are possible to have in the database.
+1. Go to **Settings** > **About phone** > **Software information**.
+2. Tap **Build number** 7 times (enter your PIN/Password if prompted) to enable **Developer options**.
+3. Go back to **Settings** > **Developer options**.
+4. Enable **USB Debugging**.
+5. Set **Default USB configuration** to **Transferring files**.
+6. Scroll down to **3GPP AT-commands** and turn it **ON**.
+7. Disable **Auto Blocker**: Go to **Settings** > **Security and privacy** > **Auto Blocker** and turn it **OFF** (this feature blocks serial USB communication).
+8. Ensure you have installed the official **Samsung USB Drivers** on your PC ([Download Here](https://developer.samsung.com/android-usb-driver)).
 
-### Messages ###
-Messages sent are saved into as history into the database. History can be exported.
-There is no real limit on sms messages. They work with special characters "åäöÅÄÖ".
+---
 
-### Files used ###
-pfsms.log - a logfile, where info on errors, success and other stuff happening in Program is saved
-history.txt - a textfile whereto current history can be exported
-customes.txt - a textfile for import/export of customers.
-groups.txt - a textfile for import/export of groups.
-pfsms.db - a simple SQL database with tables tblHistory, tblCustomers, tblGroups and tblHashtable
+## ✨ Features & Usage
 
-### Email ###
-Email password is saved into preferences using a hashtable in database. It should be a little safer so.
-The point of Email is to leave the system to get emails from an specific email account and then 
-automatically send sms to specified phone(s) with specified message.
-How to implement this I have still not decided.
+### 📩 SMS Messaging
+- **Direct Sending:** Go to the *Messages* tab and paste phone numbers separated by commas or line breaks.
+- **Group Management:** Enter a group name and click **Save Group**. To duplicate a group, select it, change the name, and save.
+- **Dynamic Tags:** Insert dynamic variables like `<<Fname>>` and `<<Lname>>` in your text to personalize messages.
+- **Special Characters:** Full support for UTF-8 and Swedish characters (`å`, `ä`, `ö`, etc.).
 
-### Settings ###
-Specify PhoneNumber, Country, Model and Modem port and click to send a test sms to yoour own phone.
-Then some import, export and opening solutions. Finally showing the latest part of pfsms.log.
+### 👥 Customer Management
+Customer data is kept minimal for performance. Full management is best handled via **Import/Export** using tab-separated text files (`.txt` / `.csv`) or external tools like Google Sheets.
+- **Fields:** `id`, `phone`, `firstname`, `lastname`, `note`
+- **Validation:** Automatic duplicate removal (only unique phone numbers are allowed) and invalid number filtering.
 
-### About ###
-It is possible to enable DEBUG. This means that instead of the standard User directory, all files will be
-saved into the folder "pfsms" within the same folder as the application. Practical for debuggning?!
-Some info on database & memory & appearance is also available!
+### 📜 Message History
+All sent messages are stored in a local SQLite database. History can be searched or exported to text files at any time.
 
-For more information, please contact, with a smile
-Peter Freund
-peter.freund@prifre.com
+### ⚙️ Settings & Debugging
+- Configure target serial modem port, country code, and phone model.
+- Includes a **Send Test SMS** function to verify modem connectivity.
+- **Debug Mode:** Enable debug mode in the *About* tab to store all database and log files in the application folder instead of the user's home directory.
+
+---
+
+## 📁 File Structure
+
+| File / Database | Description |
+| :--- | :--- |
+| `pfsms.db` | Local SQLite database (`tblHistory`, `tblCustomers`, `tblGroups`, `tblHashtable`, `tblQueue`) |
+| `pfsms.log` | Application runtime log file for troubleshooting |
+| `customers.txt` | Import/Export file for customer data (tab-separated) |
+| `groups.txt` | Import/Export file for contact groups |
+| `history.txt` | Exported SMS dispatch history |
+
+---
+
+## 📧 Automated Email-to-SMS (Planned)
+The application includes an encrypted hashtable preference store for email credentials. Future releases aim to poll a specific email account and automatically forward incoming emails as SMS messages to specified targets.
+
+---
+
+## 👤 Author & Support
+
+**Peter Freund**  
+📧 Email: [peter.freund@prifre.com](mailto:peter.freund@prifre.com)  
+🌐 Website: [https://sms.prifre.com](https://sms.prifre.com)
