@@ -1,7 +1,12 @@
-.githubexclude
-data
-documentation
-old
-__de*
+# Byggmappar och binärer
 pfsms
-pfsmsdata
+pfsms_*
+*.exe
+*.zip
+bin/
+
+# Övriga ignorerade mappar
+data/
+documentation/
+old/
+__de*

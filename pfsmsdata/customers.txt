@@ -1,0 +1,22 @@
+004612024561111	White	House	in USA
+004646708222222	Telenor Support	Company	
+004646736290839	Peter	Freund	
+0046702966838	Lisbet 	Persson Ullmark	
+0046704537771	Svetlana	Gern	
+0046708482748	Charlotte 	Larsson	
+0046708944349	Anna-Karin	Palm	
+0046709633603	Berna	Tillman	
+0046709929760	Johan	Junhav	
+0046730371604	Sandie 	Stegenborg	
+0046730793385	Sara 	Carlson	
+0046732153043	Cornelia	Ahlström	
+0046736290839	Peter	Freund	
+0046736387259	Mona 	Stollenwerk	
+0046736789807	Karin	Täppmark	
+0046737427574	Elisabeth	Junehav	
+0046739805158	Astrid	Salander	
+0046762178510	Lin	Zhang	
+0046771735311	Tre Support	Company	
+004687543169	Lin	Zhang	
+0046890510	Fröken	Ur	Clock
+004690200	Telia Support	Utomlands	
