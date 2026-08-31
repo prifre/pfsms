@@ -1,11 +1,13 @@
-name: Build macOS Release
+name: Build macOS
 
-on: [push]
+on:
+  push:
+    branches: [ "master", "main" ]
 
 jobs:
+  # JOBB 1: macOS (Din gamla mall, uppdaterad för PATH)
   build-mac:
     runs-on: macos-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,16 +18,13 @@ jobs:
           go-version: 'stable'
 
       - name: Install Fyne CLI
-        run: |
-          go install fyne.io/fyne/v2/cmd/fyne@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        run: go install fyne.io/fyne/v2/cmd/fyne@latest
 
-      - name: Build macOS App Bundle
+      - name: Build macOS App
         run: |
-          export CGO_ENABLED=1
-          fyne package -v -os darwin -appID com.prifre.pfsms
+          $(go env GOPATH)/bin/fyne package -os darwin
 
-      - name: Pack App to Zip
+      - name: Pack to Zip
         run: |
           zip -r pfsms_mac.zip *.app
 
@@ -34,3 +33,4 @@ jobs:
         with:
           name: pfsms-macOS
           path: pfsms_mac.zip
+
