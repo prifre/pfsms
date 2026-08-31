@@ -5,7 +5,7 @@ on:
     branches: [ "master", "main" ]
 
 jobs:
-  # JOBB 1: macOS (Din gamla mall, uppdaterad för PATH)
+  # JOBB 1
   build-mac:
     runs-on: macos-latest
     steps:
