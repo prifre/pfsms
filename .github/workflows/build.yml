@@ -16,16 +16,13 @@ jobs:
         with:
           go-version: 'stable'
 
-      - name: Install Fyne CLI
-        run: go install fyne.io/fyne/v2/cmd/fyne@latest
-
-      - name: Build macOS App
+      - name: Build macOS Binary
         run: |
-          $(go env GOPATH)/bin/fyne package -os darwin -appID com.prifre.pfsms -icon resources/pfsms.png
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o pfsms_darwin .
 
       - name: Pack to Zip
         run: |
-          zip -r pfsms_mac.zip *.app
+          zip pfsms_mac.zip pfsms_darwin
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
