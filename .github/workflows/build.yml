@@ -23,7 +23,7 @@ jobs:
       - name: Build macOS App Bundle
         run: |
           export CGO_ENABLED=1
-          fyne package -os darwin -appID com.prifre.pfsms
+          fyne package -v -os darwin -appID com.prifre.pfsms
 
       - name: Pack App to Zip
         run: |
